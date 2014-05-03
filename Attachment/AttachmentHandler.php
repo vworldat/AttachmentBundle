@@ -45,44 +45,44 @@ class AttachmentHandler
         
         $this->moveToStorage($file, $key);
         
-    	$attachment = new Attachment();
-    	$attachment
-    	   ->setFileKey($key)
-    	   ->setFileSize($file->getSize())
-    	   ->setFileType($file->getMimeType())
-    	   ->setStorageName($config->getStorageName())
-    	   ->setStorageDepth($config->getStorageDepth())
-    	;
-    	
-    	$link = new AttachmentLink();
-    	$link
-    	   ->setAttachment($attachment)
-    	   ->setModelName($object->getAttachableClassName())
-    	   ->setModelId($object->getAttachableId())
-    	   ->setModelField($fieldName)
-    	   ->setFileName($file->getFilename())
-    	   ->setFileExtension($file->getExtension())
-    	;
-    	
-    	if (in_array($fieldName, $object->getAttachableFieldNames()))
-    	{
-    	    $method = 'set'.$fieldName;
-    	    
-    	    if (!method_exists($object, $method))
-    	    {
-    	        throw new \RuntimeException('Fieldname setter for '.$fieldName.' does not exist in '.get_class($object));
-    	    }
-    	    
-    	    $object->$method($key);
-    	    $link->setIsCurrent(true);
-    	}
-    	
-    	/**
-    	 * TODO: this will not work if the related object is new and does not have an id yet.
-    	 */
-    	$link->save();
-    	
-    	return $attachment;
+        $attachment = new Attachment();
+        $attachment
+           ->setFileKey($key)
+           ->setFileSize($file->getSize())
+           ->setFileType($file->getMimeType())
+           ->setStorageName($config->getStorageName())
+           ->setStorageDepth($config->getStorageDepth())
+        ;
+        
+        $link = new AttachmentLink();
+        $link
+           ->setAttachment($attachment)
+           ->setModelName($object->getAttachableClassName())
+           ->setModelId($object->getAttachableId())
+           ->setModelField($fieldName)
+           ->setFileName($file->getFilename())
+           ->setFileExtension($file->getExtension())
+        ;
+        
+        if (in_array($fieldName, $object->getAttachableFieldNames()))
+        {
+            $method = 'set'.$fieldName;
+            
+            if (!method_exists($object, $method))
+            {
+                throw new \RuntimeException('Fieldname setter for '.$fieldName.' does not exist in '.get_class($object));
+            }
+            
+            $object->$method($key);
+            $link->setIsCurrent(true);
+        }
+        
+        /**
+         * TODO: this will not work if the related object is new and does not have an id yet.
+         */
+        $link->save();
+        
+        return $attachment;
     }
     
     /**
@@ -210,7 +210,7 @@ class AttachmentHandler
      */
     public function getFilePath($fileKey)
     {
-    	
+        
     }
     
     /**
@@ -222,7 +222,7 @@ class AttachmentHandler
      */
     public function getFileUrl($fileKey)
     {
-    	
+        
     }
     
     /**
