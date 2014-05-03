@@ -49,6 +49,15 @@ propel:
 
 Configure Gaufrette storages in [knplabs/knp-gaufrette-bundle](https://github.com/KnpLabs/KnpGaufretteBundle).
 
+Configure c33sAttachmentBundle:
+
+```yml
+
+c33s_attachment:
+    # work in progress
+
+```
+
 Add behavior to your propel models:
 
 ```xml
