@@ -1,0 +1,23 @@
+name:           c33s/attachment-bundle
+type:           symfony-bundle
+description:    Attach files to any (Propel) object using Symfony2
+#keywords: []
+homepage: "https://github.com/vworldat/AttachmentBundle"
+license:       ["MIT", "GPL-3.0"]
+authors:
+  - name:       David
+    email:      office@web-emerge.com
+    homepage:   'http://web-emerge.com/'
+autoload:
+    psr-0:
+        'c33s\AttachmentBundle': ''
+target-dir: "c33s/AttachmentBundle"
+minimum-stability: stable
+require:
+    php: '>=5.3.3'
+    
+    propel/propel-bundle:                           '>=1.2.0'
+    knplabs/knp-gaufrette-bundle:                   '0.1.*'
+    willdurand/propel-eventdispatcher-bundle:       '1.0.*'
+
+    

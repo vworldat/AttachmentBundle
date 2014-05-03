@@ -1,0 +1,21 @@
+<?xml version="1.0" ?>
+<container xmlns="http://symfony.com/schema/dic/services"
+    xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+    xsi:schemaLocation="http://symfony.com/schema/dic/services http://symfony.com/schema/dic/services/services-1.0.xsd">
+
+    <parameters>
+        <parameter key="c33s_attachment.handler.config" type="collection" />
+        <parameter key="c33s_attachment.handler.class">c33s\AttachmentBundle\Attachment\AttachmentHandler</parameter>
+        <parameter key="c33s_attachment.event_listener.class">c33s\AttachmentBundle\Listener\AttachmentListener</parameter>
+    </parameters>
+
+    <services>
+        <service id="c33s_attachment.handler" class="%c33s_attachment.handler.class%">
+            <argument>%c33s_attachment.handler.config%</argument>
+        </service>
+        <service id="c33s_attachment.event_listener" class="%c33s_attachment.event_listener.class%">
+            <argument type="service" id="service_container" />
+            <tag name="propel.event_listener" class="c33s\AttachmentBundle\Model\Attachment" event="propel.fetch_attachment_handler_service" />
+        </service>
+    </services>
+</container>

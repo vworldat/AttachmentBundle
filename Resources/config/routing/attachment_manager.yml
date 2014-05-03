@@ -1,0 +1,3 @@
+c33s_attachment_manager_index:
+    pattern:  /attachment_manager/
+    defaults: { _controller: 'c33sAttachmentBundle:AttachmentManager/AttachmentManager:index' }

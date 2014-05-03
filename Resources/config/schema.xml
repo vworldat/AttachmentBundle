@@ -1,0 +1,70 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<database name="default" namespace="c33s\AttachmentBundle\Model" defaultIdMethod="native">
+    <behavior name="query_cache">
+        <parameter name="lifetime" value="600" />
+    </behavior>
+    <behavior name="alternative_coding_standards">
+        <parameter name="brackets_newline" value="true" />
+        <parameter name="remove_closing_comments" value="true" />
+        <parameter name="use_whitespace" value="true" />
+        <parameter name="tab_size" value="4" />
+        <parameter name="strip_comments" value="false" />
+    </behavior>
+    
+    <table name="c33s_attachment" phpName="Attachment">
+        <behavior name="auto_add_pk" />
+        <behavior name="timestampable" />
+        <behavior name="event_dispatcher" />
+        
+        <column name="file_key" type="VARCHAR" size="255" primaryString="true" />
+        
+        <column name="file_size" type="INTEGER" required="true" />
+        <column name="file_type" type="VARCHAR" size="255" required="false" />
+        
+        <column name="storage_depth" type="INTEGER" required="true" />
+        <column name="storage_name" type="VARCHAR" size="255" required="true" />
+        
+        <column name="hash_type" type="VARCHAR" size="255" required="true" />
+        
+        <unique>
+            <unique-column name="file_key" />
+        </unique>        
+    </table>
+    
+    <table name="c33s_attachment_link" phpName="AttachmentLink">
+        <behavior name="auto_add_pk" />
+        <behavior name="timestampable" />
+        
+        <column name="attachment_id" type="INTEGER" required="true" />
+        
+        <column name="model_name" type="VARCHAR" size="255" required="true" />
+        <column name="model_id" type="INTEGER" required="false" />
+        <column name="model_field" type="VARCHAR" size="255" required="false" />
+        
+        <column name="is_current" type="BOOLEAN" default="false" />
+        <column name="file_name" type="VARCHAR" size="255" required="false" />
+        <column name="file_extension" type="VARCHAR" size="255" required="false" />
+                                
+        <index>
+            <index-column name="model_name" />
+        </index>
+        <index>
+            <index-column name="model_id" />
+        </index>
+        <index>
+            <index-column name="model_field" />
+        </index>
+        <index>
+            <index-column name="model_name" />
+            <index-column name="model_id" />
+        </index>
+        <index>
+            <index-column name="model_name" />
+            <index-column name="model_field" />
+        </index>
+        
+        <foreign-key foreignTable="c33s_attachment" onDelete="cascade">
+            <reference local="attachment_id" foreign="id" />
+        </foreign-key>
+    </table>
+</database>
