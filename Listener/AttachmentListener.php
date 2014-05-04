@@ -18,7 +18,6 @@ class AttachmentListener extends ContainerAware
      */
     public function fetchAttachmentHandlerService(GenericEvent $event)
     {
-        die('fetch!');
         Attachment::setAttachmentHandler($this->container->get('c33s_attachment.handler'));
     }
 }

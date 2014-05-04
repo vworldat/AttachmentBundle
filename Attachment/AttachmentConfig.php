@@ -14,7 +14,6 @@ class AttachmentConfig
     protected $storageName;
     protected $hashCallable;
     protected $storageDepth;
-    protected $pathPrefix;
     
     /**
      * Initialize config object, passing raw AttachmentHandler config array (attachments section), class name and field name to use.
@@ -65,13 +64,9 @@ class AttachmentConfig
         {
             $this->setStorageDepth($configValues['storage_depth']);
         }
-        if (isset($configValues['storage_name']))
+        if (isset($configValues['storage']))
         {
-            $this->setStorageName($configValues['storage_name']);
-        }
-        if (isset($configValues['path_prefix']))
-        {
-            $this->setPathPrefix($configValues['path_prefix']);
+            $this->setStorageName($configValues['storage']);
         }
     }
     
@@ -103,6 +98,21 @@ class AttachmentConfig
      */
     public function getHashCallable()
     {
+        return $this->hashCallable;
+    }
+    
+    /**
+     * Get the hash callable as string, combining an array if necessary.
+     *
+     * @return string
+     */
+    public function getHashCallableAsString()
+    {
+        if (is_array($this->hashCallable))
+        {
+            return implode(':', $this->hashCallable);
+        }
+        
         return $this->hashCallable;
     }
     
@@ -177,23 +187,6 @@ class AttachmentConfig
     {
         $this->fieldName = $fieldName;
         
-        return $this;
-    }
-    
-    /**
-     * @return string
-     */
-    public function getPathPrefix()
-    {
-        return $this->pathPrefix;
-    }
-    
-    /**
-     * @param string $pathPrefix
-     */
-    public function setPathPrefix($pathPrefix)
-    {
-        $this->pathPrefix = $pathPrefix;
         return $this;
     }
 }

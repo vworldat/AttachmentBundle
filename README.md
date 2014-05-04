@@ -3,7 +3,7 @@ AttachmentBundle
 
 Attach files to any (Propel) object using Symfony2
 
-*THIS IS WORK IN PROGRESS!*
+*THIS IS WORK IN PROGRESS! USE AT YOUR OWN RISK!*
 
 Installation
 ------------
@@ -96,8 +96,8 @@ c33s_attachment:
         # Number of directory levels to auto-generate
         storage_depth:  3
         
-        # Name of the filesystem to use. Don't use dashes ("-") inside those names!
-        filesystem:     web_storage
+        # Name of the storage to use.
+        storage:        web_storage
         
         # Now we have defined the default values we can override some of them as needed
         models:
@@ -108,7 +108,7 @@ c33s_attachment:
                 # You get the idea ...
                 #hash_callable:  sha1_file
                 #storage_depth:  3
-                #filesystem:     web_storage
+                #storage:        web_storage
                 
                 # For any given model you may override specific attachment fields you are using
                 fields:
@@ -117,7 +117,7 @@ c33s_attachment:
                     Avatar:
                         hash_callable:  md5_file
                         storage_depth:  2
-                        filesystem:     avatar_storage
+                        storage:        avatar_storage
             
 ```
 
@@ -136,3 +136,26 @@ Add behavior to your propel models:
 The given example will add the columns `avatar` and `icon` to your `person` model and supply them with cool
 file handling functions.
 
+Use it!
+
+```php
+
+use Symfony\Component\HttpFoundation\File\File;
+
+$person = new my\Super\Model\Person();
+// the only limitation at the moment is that the object has to be saved before attaching any files to make the soft relation work
+$person
+    ->setName('first person')
+    ->save()
+;
+
+$file = new File($this->get('kernel')->getRootDir() . '/../path/to/avatar.png');
+$attachment1 = $person->addAvatarAttachmentFile($file);
+
+$file = new File($this->get('kernel')->getRootDir() . '/../somefile.pdf');
+$attachment2 = $person->attachFile($file, 'customType');
+
+// save to store references inside the object.
+$person->save();
+
+```

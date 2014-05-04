@@ -3,6 +3,7 @@
 namespace c33s\AttachmentBundle\Attachment;
 
 use Gaufrette\Filesystem;
+use c33s\AttachmentBundle\Exception\StorageDoesNotExistException;
 
 /**
  * This is used by the AttachmentHandler to temporarily store storage config values.
@@ -39,7 +40,7 @@ class StorageConfig
         
         if (!isset($rawStorageConfig[$storageName]))
         {
-            throw new \RuntimeException('Invalid storage name: '.$storageName);
+            throw new StorageDoesNotExistException('Invalid storage name: '.$storageName);
         }
         
         $this

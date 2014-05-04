@@ -106,7 +106,7 @@ public function get{$phpName}Attachment()
  *
  * @return Attachment   The generated Attachment object
  */
-public function set{$phpName}AttachmentFile(File \$file)
+public function add{$phpName}AttachmentFile(File \$file)
 {
     return \$this->attachFile(\$file, '{$phpName}');
 }

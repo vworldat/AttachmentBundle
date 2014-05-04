@@ -8,6 +8,9 @@ use Knp\Bundle\GaufretteBundle\FilesystemMap;
 use c33s\AttachmentBundle\Model\AttachmentQuery;
 use c33s\AttachmentBundle\Model\AttachmentLink;
 use Gaufrette\Adapter\Local;
+use c33s\AttachmentBundle\Exception\InputFileNotReadableException;
+use c33s\AttachmentBundle\Exception\InputFileNotWritableException;
+use c33s\AttachmentBundle\Exception\CouldNotWriteToStorageException;
 
 /**
  * AttachmentHandler is the service gapping the bridge between actual files (residing in Gaufrette storages)
@@ -49,18 +52,11 @@ class AttachmentHandler
         $this->checkFile($file);
         
         $config = $this->getConfigForObject($object, $fieldName);
-        $key = $this->generateKey($file, $config);
+        $fileKey = $this->generateKey($file, $config);
         
-        $this->moveToStorage($file, $key);
+        $this->copyToStorage($file, $fileKey);
         
-        $attachment = new Attachment();
-        $attachment
-           ->setFileKey($key)
-           ->setFileSize($file->getSize())
-           ->setFileType($file->getMimeType())
-           ->setStorageName($config->getStorageName())
-           ->setStorageDepth($config->getStorageDepth())
-        ;
+        $attachment = $this->getOrCreateAttachment($file, $config, $fileKey);
         
         $link = new AttachmentLink();
         $link
@@ -81,7 +77,7 @@ class AttachmentHandler
                 throw new \RuntimeException('Fieldname setter for '.$fieldName.' does not exist in '.get_class($object));
             }
             
-            $object->$method($key);
+            $object->$method($fileKey);
             $link->setIsCurrent(true);
         }
         
@@ -104,13 +100,13 @@ class AttachmentHandler
     {
         if (!$file->isReadable())
         {
-            throw new \RuntimeException('File is not readable');
+            throw new InputFileNotReadableException('File ' . $file->getRealPath() . ' is not readable');
         }
         
-        if (!$file->isWritable())
-        {
-            throw new \RuntimeException('File is not writable');
-        }
+//         if (!$file->isWritable())
+//         {
+//             throw new InputFileNotWritableException('File ' . $file->getRealPath() . ' is not writable');
+//         }
         
         return true;
     }
@@ -142,7 +138,7 @@ class AttachmentHandler
      * @param File $file
      * @param string $fileKey
      */
-    protected function moveToStorage(File $file, $fileKey)
+    protected function copyToStorage(File $file, $fileKey)
     {
         $config = $this->getStorageConfigForFileKey($fileKey);
         
@@ -152,15 +148,13 @@ class AttachmentHandler
         if (!$filesystem->has($storagePath))
         {
             $size = $file->getSize();
-            $writtenSize = $filesystem->write($storagePath, file_get_contents($file->getPathname()));
+            $writtenSize = $filesystem->write($storagePath, file_get_contents($file->getRealPath()));
             
             if ($writtenSize != $size)
             {
-                throw new \RuntimeException('Error writing file to storage');
+                throw new CouldNotWriteToStorageException('Error copying file ' . $file->getRealPath() . ' to storage');
             }
         }
-        
-        unlink($file->getPathname());
     }
     
     /**
@@ -238,7 +232,7 @@ class AttachmentHandler
      */
     protected function generateFileHash(File $file, $hashCallable)
     {
-        return call_user_func($hashCallable, $file->getPathname());
+        return call_user_func($hashCallable, $file->getRealPath());
     }
     
     /**
@@ -347,5 +341,34 @@ class AttachmentHandler
             ->filterByFileKey($fileKey)
             ->count() > 0
         ;
+    }
+    
+    /**
+     * Get a new Attachment object or an existing one if a file with the same key was already stored.
+     *
+     * @param File $file
+     * @param AttachmentConfig $config
+     * @param string $fileKey
+     *
+     * @return Attachment
+     */
+    public function getOrCreateAttachment(File $file, AttachmentConfig $config, $fileKey)
+    {
+        $attachment = $this->getAttachment($fileKey);
+        
+        if (null === $attachment)
+        {
+            $attachment = new Attachment();
+            $attachment
+                ->setFileKey($fileKey)
+                ->setFileSize($file->getSize())
+                ->setFileType($file->getMimeType())
+                ->setStorageName($config->getStorageName())
+                ->setStorageDepth($config->getStorageDepth())
+                ->setHashType($config->getHashCallableAsString())
+            ;
+        }
+        
+        return $attachment;
     }
 }
