@@ -14,43 +14,40 @@ class AttachmentConfig
     protected $storageName;
     protected $hashCallable;
     protected $storageDepth;
-    
-    public function __construct()
-    {
-        
-    }
+    protected $pathPrefix;
     
     /**
-     * Initialize config object, passing raw AttachmentHandler config array, class name and field name to use.
+     * Initialize config object, passing raw AttachmentHandler config array (attachments section), class name and field name to use.
      *
-     * @param array $rawConfig
+     * @param array $attachmentConfig
      * @param string $className
      * @param string $fieldName
      *
      * @return AttachmentConfig
      */
-    public static function createFromRawConfig(array $rawConfig, $className, $fieldName)
+    public function __construct(array $attachmentConfig, $className, $fieldName)
     {
-        $config = new static();
-        
-        $config
+        $this->init($attachmentConfig, $className, $fieldName);
+    }
+    
+    protected function init(array $attachmentConfig, $className, $fieldName)
+    {
+        $this
             ->setClassName($className)
             ->setFieldName($fieldName)
         ;
         
-        $config->mergeConfigValues($rawConfig);
+        $this->mergeConfigValues($attachmentConfig);
         
-        if (isset($rawConfig['models'][$className]) && is_array($rawConfig['models'][$className]))
+        if (isset($attachmentConfig['models'][$className]) && is_array($attachmentConfig['models'][$className]))
         {
-            $config->mergeConfigValues($rawConfig['models'][$className]);
+            $this->mergeConfigValues($attachmentConfig['models'][$className]);
         }
         
-        if (isset($rawConfig['models'][$className]['fields'][$fieldName]) && is_array($rawConfig['models'][$className]['fields'][$fieldName]))
+        if (isset($attachmentConfig['models'][$className]['fields'][$fieldName]) && is_array($attachmentConfig['models'][$className]['fields'][$fieldName]))
         {
-            $config->mergeConfigValues($rawConfig['models'][$className]['fields'][$fieldName]);
+            $this->mergeConfigValues($attachmentConfig['models'][$className]['fields'][$fieldName]);
         }
-        
-        return $config;
     }
     
     /**
@@ -71,6 +68,10 @@ class AttachmentConfig
         if (isset($configValues['storage_name']))
         {
             $this->setStorageName($configValues['storage_name']);
+        }
+        if (isset($configValues['path_prefix']))
+        {
+            $this->setPathPrefix($configValues['path_prefix']);
         }
     }
     
@@ -178,5 +179,21 @@ class AttachmentConfig
         
         return $this;
     }
-	
+    
+    /**
+     * @return string
+     */
+    public function getPathPrefix()
+    {
+        return $this->pathPrefix;
+    }
+    
+    /**
+     * @param string $pathPrefix
+     */
+    public function setPathPrefix($pathPrefix)
+    {
+        $this->pathPrefix = $pathPrefix;
+        return $this;
+    }
 }

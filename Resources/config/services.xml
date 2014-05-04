@@ -12,7 +12,9 @@
     <services>
         <service id="c33s_attachment.handler" class="%c33s_attachment.handler.class%">
             <argument>%c33s_attachment.handler.config%</argument>
+            <argument type="service" id="knp_gaufrette.filesystem_map" />
         </service>
+        
         <service id="c33s_attachment.event_listener" class="%c33s_attachment.event_listener.class%">
             <argument type="service" id="service_container" />
             <tag name="propel.event_listener" class="c33s\AttachmentBundle\Model\Attachment" event="propel.fetch_attachment_handler_service" />

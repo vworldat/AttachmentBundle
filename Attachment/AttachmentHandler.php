@@ -7,6 +7,7 @@ use Symfony\Component\HttpFoundation\File\File;
 use Knp\Bundle\GaufretteBundle\FilesystemMap;
 use c33s\AttachmentBundle\Model\AttachmentQuery;
 use c33s\AttachmentBundle\Model\AttachmentLink;
+use Gaufrette\Adapter\Local;
 
 /**
  * AttachmentHandler is the service gapping the bridge between actual files (residing in Gaufrette storages)
@@ -21,9 +22,16 @@ class AttachmentHandler
     protected $configs = array();
     protected $keyDelimiter = '-';
     
-    public function __construct(array $rawConfig/*, FilesystemMap $filesystemMap*/)
+    /**
+     *
+     * @var FilesystemMap
+     */
+    protected $filesystemMap;
+    
+    public function __construct(array $rawConfig, FilesystemMap $filesystemMap)
     {
         $this->rawConfig = $rawConfig;
+        $this->filesystemMap = $filesystemMap;
     }
     
     /**
@@ -122,7 +130,7 @@ class AttachmentHandler
         
         if (!isset($this->configs[$configKey]))
         {
-            $this->configs[$configKey] = AttachmentConfig::createFromRawConfig($this->rawConfig, $className, $fieldName);
+            $this->configs[$configKey] = new AttachmentConfig($this->rawConfig['attachments'], $className, $fieldName);
         }
         
         return $this->configs[$configKey];
@@ -132,23 +140,48 @@ class AttachmentHandler
      * Move the file to the storage as defined in the given file key.
      *
      * @param File $file
-     * @param string $key
+     * @param string $fileKey
      */
-    protected function moveToStorage(File $file, $key)
+    protected function moveToStorage(File $file, $fileKey)
     {
-        $path = $this->keyToStoragePath($key);
+        $config = $this->getStorageConfigForFileKey($fileKey);
+        
+        $filesystem = $config->getFilesystem();
+        $storagePath = $config->getStoragePath();
+        
+        if (!$filesystem->has($storagePath))
+        {
+            $size = $file->getSize();
+            $writtenSize = $filesystem->write($storagePath, file_get_contents($file->getPathname()));
+            
+            if ($writtenSize != $size)
+            {
+                throw new \RuntimeException('Error writing file to storage');
+            }
+        }
+        
+        unlink($file->getPathname());
     }
     
     /**
-     * Convert the given key into a storage path.
+     * Extract info from the given key.
      *
      * @param string $key
      *
-     * @return string
+     * @return StorageConfig
      */
-    public function keyToStoragePath($key)
+    protected function getStorageConfigForFileKey($fileKey)
     {
-        list($hash, $depth, $storageName) = explode($this->getKeyDelimiter(), $key, 3);
+        if (!isset($this->configs[$fileKey]))
+        {
+            $config = new StorageConfig($fileKey, $this->rawConfig['storages'], $this->getKeyDelimiter());
+            
+            $config->setFilesystem($this->filesystemMap->get($config->getFilesystemName()));
+            
+            $this->configs[$fileKey] = $config;
+        }
+        
+        return $this->configs[$fileKey];
     }
     
     /**
@@ -169,8 +202,15 @@ class AttachmentHandler
             throw new \RuntimeException('Invalid file hashing callable: '.$hashCallable);
         }
         
-        return sprintf('%s%s%d%s%s',
+        $extension = $file->getExtension();
+        if ('' != $extension)
+        {
+            $extension = '.'.str_replace($this->getKeyDelimiter(), '', $extension);
+        }
+        
+        return sprintf('%s%s%s%d%s%s',
             $this->generateFileHash($file, $hashCallable),
+            $extension,
             $this->getKeyDelimiter(),
             $config->getStorageDepth(),
             $this->getKeyDelimiter(),
@@ -202,15 +242,43 @@ class AttachmentHandler
     }
     
     /**
-     * Get the (local) file path for the given file key.
+     * Get the (local) file for the given file key.
+     *
+     * @todo    Gaufrette\Adapter\Local does not expose its directory, find another way.
      *
      * @param string $fileKey
      *
-     * @return $string
+     * @return Gaufrette\File
      */
     public function getFilePath($fileKey)
     {
         
+    }
+    
+    /**
+     * Check if the given file is stored locally.
+     *
+     * @param string $fileKey
+     *
+     * @return boolean
+     */
+    public function isLocalFile($fileKey)
+    {
+        $config = $this->getStorageConfigForFileKey($fileKey);
+        
+        return $config->getFilesystem()->getAdapter() instanceof Local;
+    }
+    
+    /**
+     * Check if there could be a URL to this key.
+     *
+     * @param string $fileKey
+     *
+     * @return boolean
+     */
+    public function hasFileUrl($fileKey)
+    {
+        $this->getStorageConfigForFileKey($fileKey)->hasBaseUrl();
     }
     
     /**
@@ -222,7 +290,7 @@ class AttachmentHandler
      */
     public function getFileUrl($fileKey)
     {
-        
+        return $this->getStorageConfigForFileKey($fileKey)->getFileUrl();
     }
     
     /**
@@ -230,9 +298,11 @@ class AttachmentHandler
      *
      * @param string $fileKey
      */
-    public function removeFile($fileKey)
+    protected function removeFile($fileKey)
     {
+        $config = $this->getStorageConfigForFileKey($fileKey);
         
+        $config->getFilesystem()->delete($config->getStoragePath());
     }
     
     /**
@@ -244,7 +314,9 @@ class AttachmentHandler
      */
     public function fileExists($fileKey)
     {
+        $config = $this->getStorageConfigForFileKey($fileKey);
         
+        return $config->getFilesystem()->has($config->getStoragePath());
     }
     
     /**
