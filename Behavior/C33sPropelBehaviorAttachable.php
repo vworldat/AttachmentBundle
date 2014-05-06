@@ -19,6 +19,11 @@ class C33sPropelBehaviorAttachable extends Behavior
         return array_filter($columns);
     }
     
+    public function postSave()
+    {
+        return "\$this->processNewUnsavedFiles(\$con);\n";
+    }
+    
     /**
      * Add the create_column and update_columns to the current table
      */
@@ -53,6 +58,17 @@ class C33sPropelBehaviorAttachable extends Behavior
 protected \$a{$phpName}Attachment;
 
 /**
+ * @var File
+ */
+protected \$aNew{$phpName}File;
+
+EOF;
+            
+        }
+        
+        $attributes .= <<<EOF
+
+/**
  * @var UploadCollection
  */
 protected \$aAllAttachmentsCollection;
@@ -62,10 +78,17 @@ protected \$aAllAttachmentsCollection;
  */
 protected \$aGeneralAttachmentsCollection;
 
+/**
+ * @var UploadCollection
+ */
+protected \$aNewAllAttachmentsCollection;
+
+/**
+ * @var UploadCollection
+ */
+protected \$aNewGeneralAttachmentsCollection;
+
 EOF;
-            
-        }
-        
         return $attributes;
     }
     
@@ -81,12 +104,16 @@ EOF;
         
         $methods = '';
         
+        $processes = '';
+        
         $columnsText = '';
         foreach ($this->getSingleColumns() as $column)
         {
             $phpName = $this->getTable()->getColumn($column)->getPhpName();
             
             $columnsText .= "        '{$phpName}',\n";
+            
+            $processes .= "    \$modified += \$this->processNew{$phpName}File();\n";
             
             $methods .= <<<EOF
 
@@ -140,6 +167,7 @@ public function has{$phpName}()
 
 /**
  * Attach a file to the {$column} column using an UploadedFile or File object. This is useful in forms.
+ * The actual attaching will be executed during postSave().
  *
  * @param File \$file
  *
@@ -147,16 +175,14 @@ public function has{$phpName}()
  */
 public function set{$phpName}File(File \$file = null)
 {
-    if (null !== \$file)
-    {
-        \$this->attachFile(\$file, '{$phpName}');
-    }
-    
+    \$this->aNew{$phpName}File = \$file;
+
     return \$this;
 }
 
 /**
  * Attach a file to the {$column} column using a local filesystem path. This is useful when loading fixtures.
+ * The actual attaching will be executed during postSave().
  *
  * @param string \$filePath
  *
@@ -164,8 +190,7 @@ public function set{$phpName}File(File \$file = null)
  */
 public function set{$phpName}FilePath(\$filePath)
 {
-    \$file = new File(\$filePath);
-    \$this->attachFile(\$file, '{$phpName}');
+    \$this->aNew{$phpName}File = new File(\$filePath);
     
     return \$this;
 }
@@ -213,6 +238,24 @@ public function get{$phpName}FileWebPath()
     }
     
     return null;
+}
+
+/**
+ * Process an uploaded {$phpName} attachment file.
+ *
+ * @return int  0 if nothing was changed, 1 if a file was saved
+ */
+protected function processNew{$phpName}File()
+{
+    if (null === \$this->aNew{$phpName}File)
+    {
+        return 0;
+    }
+    
+    \$this->attachFile(\$this->aNew{$phpName}File, '{$phpName}');
+    \$this->aNew{$phpName}File = null;
+    
+    return 1;
 }
 
 EOF;
@@ -264,8 +307,8 @@ public function getAllAttachmentsCollection()
 }
 
 /**
- * Set collection of Attachment objects to keep as links. This will immediately delete the missing objects
- * and save the new ones. This is designed to be used with the collection_upload form type.
+ * Set collection of Attachment objects to keep as links. The actual upload will be executed during postSave.
+ * This is designed to be used with the collection_upload form type.
  *
  * @param UploadCollection \$collection
  *
@@ -273,26 +316,29 @@ public function getAllAttachmentsCollection()
  */
 public function setAllAttachmentsCollection(UploadCollection \$collection)
 {
-    \$toDelete = \$this->getAllAttachments()->diff(\$collection);
-    
-    foreach (\$toDelete as \$attachment)
-    {
-        \$attachment->deleteLoadedAttachmentLinks();
-    }
-    
-    foreach (\$collection as \$attachment)
-    {
-        if (\$attachment->isNew())
-        {
-            \$attachment->saveNewDataToStorage();
-        }
-        else
-        {
-            \$attachment->saveRememberedCustomName();
-        }
-    }
+    \$this->aNewAllAttachmentsCollection = \$collection;
     
     return \$this;
+}
+
+/**
+ * Perform processing of attachments collection if present. This is called during postSave().
+ *
+ * @return {$this->getTable()->getPhpName()}
+ */
+protected function processAllAttachmentsCollection()
+{
+    if (null === \$this->aNewAllAttachmentsCollection)
+    {
+        return;
+    }
+    
+    \$toSave = \$this->aNewAllAttachmentsCollection;
+    \$toDelete = \$this->getAllAttachments()->diff(\$toSave);
+    
+    \$this->aNewAllAttachmentsCollection = null;
+    
+    return \$this->processAttachmentsCollection(\$toSave, \$toDelete);
 }
 
 /**
@@ -341,8 +387,8 @@ public function getGeneralAttachmentsCollection()
 }
 
 /**
- * Set collection of Attachment objects to keep as links. This will immediately delete the missing objects
- * and save the new ones. This is designed to be used with the collection_upload form type.
+ * Set collection of Attachment objects to keep as links. The actual upload will be executed during postSave.
+ * This is designed to be used with the collection_upload form type.
  *
  * @param UploadCollection \$collection
  *
@@ -350,26 +396,29 @@ public function getGeneralAttachmentsCollection()
  */
 public function setGeneralAttachmentsCollection(UploadCollection \$collection)
 {
-    \$toDelete = \$this->getGeneralAttachments()->diff(\$collection);
-    
-    foreach (\$toDelete as \$attachment)
-    {
-        \$attachment->deleteLoadedAttachmentLinks();
-    }
-    
-    foreach (\$collection as \$attachment)
-    {
-        if (\$attachment->isNew())
-        {
-            \$attachment->saveNewDataToStorage();
-        }
-        else
-        {
-            \$attachment->saveRememberedCustomName();
-        }
-    }
+    \$this->aNewGeneralAttachmentsCollection = \$collection;
     
     return \$this;
+}
+
+/**
+ * Perform processing of attachments collection if present. This is called during postSave().
+ *
+ * @return {$this->getTable()->getPhpName()}
+ */
+protected function processGeneralAttachmentsCollection()
+{
+    if (null === \$this->aNewGeneralAttachmentsCollection)
+    {
+        return;
+    }
+    
+    \$toSave = \$this->aNewGeneralAttachmentsCollection;
+    \$toDelete = \$this->getGeneralAttachments()->diff(\$toSave);
+    
+    \$this->aNewGeneralAttachmentsCollection = null;
+    
+    return \$this->processAttachmentsCollection(\$toSave, \$toDelete);
 }
 
 /**
@@ -417,7 +466,57 @@ public function getSpecificAttachmentsQuery(\$fieldName)
 }
 
 /**
+ * Set collection of Attachment objects to keep as links and those to remove.
+ *
+ * @param PropelCollection \$toSave
+ * @param PropelCollection \$toDelete
+ *
+ * @return {$this->getTable()->getPhpName()}
+ */
+protected function processAttachmentsCollection(PropelCollection \$toSave, PropelCollection \$toDelete)
+{
+    foreach (\$toDelete as \$attachment)
+    {
+        \$attachment->deleteLoadedAttachmentLinks();
+    }
+    
+    foreach (\$toSave as \$attachment)
+    {
+        if (\$attachment->isNew())
+        {
+            \$attachment->saveNewDataToStorage();
+        }
+        else
+        {
+            \$attachment->saveRememberedCustomName();
+        }
+    }
+    
+    return \$this;
+}
+
+/**
+ * Process any attachment files that have been set but not attached yet.
+ */
+protected function processNewUnsavedFiles(PropelPDO \$con = null)
+{
+    \$this->processAllAttachmentsCollection();
+    \$this->processGeneralAttachmentsCollection();
+    
+    // count single modified fields to re-save if necessary
+    \$modified = 0;
+{$processes}
+    if (\$modified > 0)
+    {
+        \$this->save(\$con);
+    }
+    
+    return \$this;
+}
+
+/**
  * Attach the given file to this object, optionally setting a field name that may or may not exist in the object.
+ * This will execute immediately, requiring an object save() if an existing fieldname was provided.
  *
  * @param File \$file
  * @param string \$fieldName

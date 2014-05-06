@@ -21,8 +21,7 @@ class AttachmentQuery extends BaseAttachmentQuery
         return $this
             ->joinAttachmentLink()
             ->useAttachmentLinkQuery()
-                ->filterByModelName($object->getAttachableClassName())
-                ->filterByModelId($object->getAttachableId())
+                ->filterByAttachableObject($object)
             ->endUse()
         ;
     }

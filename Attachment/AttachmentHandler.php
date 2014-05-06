@@ -12,6 +12,7 @@ use c33s\AttachmentBundle\Exception\InputFileNotReadableException;
 use c33s\AttachmentBundle\Exception\InputFileNotWritableException;
 use c33s\AttachmentBundle\Exception\CouldNotWriteToStorageException;
 use Symfony\Component\HttpFoundation\File\UploadedFile;
+use c33s\AttachmentBundle\Model\AttachmentLinkQuery;
 
 /**
  * AttachmentHandler is the service gapping the bridge between actual files (residing in Gaufrette storages)
@@ -94,6 +95,12 @@ class AttachmentHandler
             
             $object->$method($attachment);
             $link->setIsCurrent(true);
+            
+            AttachmentLinkQuery::create()
+                ->filterByAttachableObject($object)
+                ->filterByModelField($fieldName)
+                ->doUpdate(array('IsCurrent' => false), \Propel::getConnection())
+            ;
         }
         
         /**
