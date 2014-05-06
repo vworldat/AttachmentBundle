@@ -1,3 +1,79 @@
+AttachmentBundle installation
+=============================
+
+Require [`c33s/attachment-bundle`](https://packagist.org/packages/c33s/attachment-bundle)
+in your `composer.json` file:
+
+
+```js
+{
+    "require": {
+        "c33s/attachment-bundle": "@stable",
+        "avocode/form-extensions-bundle": "dev-master" (optional)
+    }
+}
+```
+
+Register the bundle and its dependencies in `app/AppKernel.php`:
+
+```php
+
+    // app/AppKernel.php
+
+    public function registerBundles()
+    {
+        return array(
+            // ...
+
+            new c33s\AttachmentBundle\c33sAttachmentBundle(),
+            new Bazinga\Bundle\PropelEventDispatcherBundle\BazingaPropelEventDispatcherBundle(),
+            new Knp\Bundle\GaufretteBundle\KnpGaufretteBundle(),
+            // also including avocode/form-extensions-bundle is recommended to geht the admin forms to work
+            new Avocode\FormExtensionsBundle\AvocodeFormExtensionsBundle(),
+        );
+    }
+
+```
+
+Add propel behaviors to your propel config:
+
+```yml
+
+# app/config/config.yml
+
+propel:
+    # ...
+    
+    behaviors:
+        c33s_attachable:    vendor.c33s.attachment-bundle.c33s.AttachmentBundle.Behavior.C33sPropelBehaviorAttachable
+        event_dispatcher:   vendor.willdurand.propel-eventdispatcher-behavior.src.EventDispatcherBehavior
+
+```
+
+Configure Gaufrette filesystems as defined in [knplabs/knp-gaufrette-bundle](https://github.com/KnpLabs/KnpGaufretteBundle):
+
+```yml
+
+# app/config/config.yml
+
+knp_gaufrette:
+    adapters:
+        local_base:
+            local:
+                directory:  '%kernel.root_dir%/../web/storage/'
+                
+    filesystems:
+        web_storage_fs:
+            adapter:    local_base
+
+```
+
+Configure AttachmentBundle:
+
+```yml
+
+# app/config/config.yml
+
 c33s_attachment:
     # Configure knp_gaufrette filesystems to use. Make sure they are also defined in the knp_gaufrette config section.
     storages:
@@ -61,3 +137,10 @@ c33s_attachment:
                         hash_callable:  md5_file
                         storage_depth:  2
                         storage:        avatar_storage
+            
+```
+
+Use it!
+-------
+
+See [usage documentation](usage.md).

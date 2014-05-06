@@ -44,7 +44,8 @@
         <column name="is_current" type="BOOLEAN" default="false" />
         <column name="file_name" type="VARCHAR" size="255" required="false" />
         <column name="file_extension" type="VARCHAR" size="255" required="false" />
-                                
+        <column name="custom_name" type="VARCHAR" size="255" required="false" />
+        
         <index>
             <index-column name="model_name" />
         </index>

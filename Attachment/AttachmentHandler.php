@@ -11,6 +11,7 @@ use Gaufrette\Adapter\Local;
 use c33s\AttachmentBundle\Exception\InputFileNotReadableException;
 use c33s\AttachmentBundle\Exception\InputFileNotWritableException;
 use c33s\AttachmentBundle\Exception\CouldNotWriteToStorageException;
+use Symfony\Component\HttpFoundation\File\UploadedFile;
 
 /**
  * AttachmentHandler is the service gapping the bridge between actual files (residing in Gaufrette storages)
@@ -58,26 +59,40 @@ class AttachmentHandler
         
         $attachment = $this->getOrCreateAttachment($file, $config, $fileKey);
         
+        if ($file instanceof UploadedFile)
+        {
+            $extension = $file->getClientOriginalExtension();
+            $filename = $file->getClientOriginalName();
+            $basename = basename($filename, '.'.$extension);
+        }
+        else
+        {
+            $extension = $file->getExtension();
+            $filename = $file->getFilename();
+            $basename = $file->getBasename('.'.$extension);
+        }
+        
         $link = new AttachmentLink();
         $link
            ->setAttachment($attachment)
            ->setModelName($object->getAttachableClassName())
            ->setModelId($object->getAttachableId())
            ->setModelField($fieldName)
-           ->setFileName($file->getFilename())
-           ->setFileExtension($file->getExtension())
+           ->setFileName($filename)
+           ->setFileExtension($extension)
+           ->setCustomName($basename)
         ;
         
         if (in_array($fieldName, $object->getAttachableFieldNames()))
         {
-            $method = 'set'.$fieldName;
+            $method = 'set'.$fieldName.'Attachment';
             
             if (!method_exists($object, $method))
             {
                 throw new \RuntimeException('Fieldname setter for '.$fieldName.' does not exist in '.get_class($object));
             }
             
-            $object->$method($fileKey);
+            $object->$method($attachment);
             $link->setIsCurrent(true);
         }
         
@@ -196,7 +211,15 @@ class AttachmentHandler
             throw new \RuntimeException('Invalid file hashing callable: '.$hashCallable);
         }
         
-        $extension = $file->getExtension();
+        if ($file instanceof UploadedFile)
+        {
+            $extension = $file->getClientOriginalExtension();
+        }
+        else
+        {
+            $extension = $file->getExtension();
+        }
+        
         if ('' != $extension)
         {
             $extension = '.'.str_replace($this->getKeyDelimiter(), '', $extension);
@@ -236,20 +259,6 @@ class AttachmentHandler
     }
     
     /**
-     * Get the (local) file for the given file key.
-     *
-     * @todo    Gaufrette\Adapter\Local does not expose its directory, find another way.
-     *
-     * @param string $fileKey
-     *
-     * @return Gaufrette\File
-     */
-    public function getFilePath($fileKey)
-    {
-        
-    }
-    
-    /**
      * Check if the given file is stored locally.
      *
      * @param string $fileKey
@@ -285,6 +294,18 @@ class AttachmentHandler
     public function getFileUrl($fileKey)
     {
         return $this->getStorageConfigForFileKey($fileKey)->getFileUrl();
+    }
+    
+    /**
+     * Get a File object for the given key. The file has to exist locally.
+     *
+     * @param string $fileKey
+     *
+     * @return File
+     */
+    public function getFile($fileKey)
+    {
+        return $this->getStorageConfigForFileKey($fileKey)->getFile();
     }
     
     /**

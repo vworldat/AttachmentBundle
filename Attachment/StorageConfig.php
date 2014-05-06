@@ -4,6 +4,7 @@ namespace c33s\AttachmentBundle\Attachment;
 
 use Gaufrette\Filesystem;
 use c33s\AttachmentBundle\Exception\StorageDoesNotExistException;
+use Symfony\Component\HttpFoundation\File\File;
 
 /**
  * This is used by the AttachmentHandler to temporarily store storage config values.
@@ -20,6 +21,7 @@ class StorageConfig
     protected $filesystem;
     protected $pathPrefix;
     protected $baseUrl;
+    protected $basePath;
     protected $storagePath;
     
     public function __construct($key, array $rawStorageConfig, $keyDelimiter)
@@ -47,6 +49,7 @@ class StorageConfig
             ->setFilesystemName($rawStorageConfig[$storageName]['filesystem'])
             ->setPathPrefix($rawStorageConfig[$storageName]['path_prefix'])
             ->setBaseUrl($rawStorageConfig[$storageName]['base_url'])
+            ->setBasePath($rawStorageConfig[$storageName]['base_path'])
             ->setStoragePath($this->generateStoragePath())
         ;
     }
@@ -256,6 +259,21 @@ class StorageConfig
     }
     
     /**
+     * Get File object to directly access the file.
+     *
+     * @return File
+     */
+    public function getFile()
+    {
+        if (!$this->hasBasePath())
+        {
+            throw new \RuntimeException('This storage does not have a configured base path!');
+        }
+        
+        return new File($this->getBasePath().'/'.$this->getStoragePath());
+    }
+    
+    /**
      * The full path to the file inside the storage.
      *
      * @return string
@@ -275,4 +293,36 @@ class StorageConfig
         
         return $this;
     }
+
+    /**
+     *
+     * @return string
+     */
+    public function getBasePath()
+    {
+        return $this->basePath;
+    }
+
+    /**
+     *
+     * @return boolean
+     */
+    public function hasBasePath()
+    {
+        return null !== $this->basePath;
+    }
+
+    /**
+     *
+     * @param string $basePath
+     *
+     * @return StorageConfig
+     */
+    public function setBasePath($basePath)
+    {
+        $this->basePath = $basePath;
+        
+        return $this;
+    }
+	
 }

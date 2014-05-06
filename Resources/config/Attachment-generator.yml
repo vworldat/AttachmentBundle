@@ -1,0 +1,54 @@
+generator: admingenerator.generator.propel
+params:
+    model: c33s\AttachmentBundle\Model\Attachment
+    namespace_prefix: c33s
+    concurrency_lock: ~
+    bundle_name: AttachmentBundle
+    pk_requirement: ~
+    fields:
+        name:
+            dbType: VARCHAR
+    object_actions:
+        delete: ~
+    batch_actions:
+        delete: ~
+builders:
+#    list:
+#        params:
+#            title: List for AttachmentBundle
+#            display: ~
+#            actions:
+#                new: ~
+#            object_actions:
+#                edit: ~
+#                delete: ~
+#    filters:
+#        params:
+#            display: ~
+#    new:
+#        params:
+#            title: New object for AttachmentBundle
+#            display: ~
+#            actions:
+#                save: ~
+#                list: ~
+    edit:
+        params:
+            title:  ""
+            display:
+                - id
+                - name
+            actions: []
+#    show:
+#        params:
+#            title: "You're viewing the object \"%object%\"|{ %object%: Attachment.title }|"
+#            display: ~
+#            actions:
+#                list: ~
+#                new: ~
+#    actions:
+#        params:
+#            object_actions:
+#                delete: ~
+#            batch_actions:
+#                delete: ~

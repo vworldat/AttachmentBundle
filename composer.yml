@@ -20,4 +20,6 @@ require:
     knplabs/knp-gaufrette-bundle:                   '0.1.*'
     willdurand/propel-eventdispatcher-bundle:       '1.0.*'
 
+suggest:
+    avocode/form-extensions-bundle:                 'dev-master'
     
