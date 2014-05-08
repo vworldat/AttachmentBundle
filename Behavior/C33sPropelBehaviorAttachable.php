@@ -544,7 +544,7 @@ public function attachFile(File \$file, \$fieldName = null, \$deleteAfterCopy = 
  */
 public function setDeleteNewAttachmentFiles(\$deleteNewAttachmentFiles)
 {
-    \$this->deleteNewAttachmentFiles = (boolean) \$deleteNewAttachmentFiles;
+    \$this->deleteNewAttachmentFiles = \$deleteNewAttachmentFiles;
     
     return \$this;
 }
