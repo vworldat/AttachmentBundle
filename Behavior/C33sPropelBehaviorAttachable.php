@@ -91,7 +91,7 @@ protected \$aNewGeneralAttachmentsCollection;
 /**
  * @var boolean
  */
-protected \$deleteNewAttachmentFiles = true;
+protected \$deleteNewAttachmentFiles = null;
 
 EOF;
         return $attributes;
@@ -529,7 +529,7 @@ protected function processNewUnsavedFiles(PropelPDO \$con = null)
  *
  * @return Attachment   The created Attachment object
  */
-public function attachFile(File \$file, \$fieldName = null, \$deleteAfterCopy = true)
+public function attachFile(File \$file, \$fieldName = null, \$deleteAfterCopy = null)
 {
     return \$this->getAttachmentHandler()->storeAndAttachFile(\$file, \$this, \$fieldName, \$deleteAfterCopy);
 }

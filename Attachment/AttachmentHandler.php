@@ -43,15 +43,22 @@ class AttachmentHandler
      * Store a new attachment file for the given object and optional object field name.
      * There is no need for the field name to exist explicitly inside the object.
      *
+     * By default, new files will be deleted from their source if they are an instance of UploadedFile, but NOT otherwise.
+     *
      * @param File $file
      * @param AttachableObjectInterface $object
      * @param string $fieldName
-     * @param boolean $deleteAfterCopy  Set to false if you do not want the source file to be removed after copying it to the storage
+     * @param boolean $deleteAfterCopy  Override default file deletion behavior
      *
      * @return Attachment   The created Attachment object
      */
-    public function storeAndAttachFile(File $file, AttachableObjectInterface $object, $fieldName = null, $deleteAfterCopy = true)
+    public function storeAndAttachFile(File $file, AttachableObjectInterface $object, $fieldName = null, $deleteAfterCopy = null)
     {
+        if (null === $deleteAfterCopy)
+        {
+            $deleteAfterCopy = $file instanceof UploadedFile;
+        }
+        
         $this->checkFile($file, $deleteAfterCopy);
         
         $config = $this->getConfigForObject($object, $fieldName);

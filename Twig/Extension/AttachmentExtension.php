@@ -70,17 +70,18 @@ class AttachmentExtension extends \Twig_Extension
      * @param string $key
      * @param string $filter
      * @param string $title
+     * @param string $altImageUrl
      */
-    public function attachmentImageFilter($key, $filter, $title = '')
+    public function attachmentImageFilter($key, $filter, $title = '', $altImageUrl = null)
     {
         $url = $this->attachmentUrlFilter($key, $filter);
         
-        if ('' == $url)
+        if ('' == $url && null === $altImageUrl)
         {
             return '';
         }
         
-        return '<img src="'.$url.'" title="'.htmlspecialchars($title).'" />';
+        return '<img src="'.('' != $url ? $url : $altImageUrl).'" title="'.htmlspecialchars($title).'" />';
     }
     
     public function getName()
