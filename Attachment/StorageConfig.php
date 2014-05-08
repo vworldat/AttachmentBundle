@@ -13,6 +13,7 @@ use Symfony\Component\HttpFoundation\File\File;
  */
 class StorageConfig
 {
+    protected $fileKey;
     protected $key;
     protected $hash;
     protected $depth;
@@ -24,21 +25,17 @@ class StorageConfig
     protected $basePath;
     protected $storagePath;
     
-    public function __construct($key, array $rawStorageConfig, $keyDelimiter)
+    public function __construct(FileKey $fileKey, array $rawStorageConfig)
     {
-        $this->init($key, $rawStorageConfig, $keyDelimiter);
+        $this->init($fileKey, $rawStorageConfig);
     }
     
-    protected function init($key, array $rawStorageConfig, $keyDelimiter)
+    protected function init(FileKey $fileKey, array $rawStorageConfig)
     {
-        list($hash, $depth, $storageName) = explode($keyDelimiter, $key, 3);
+        $this->fileKey = $fileKey;
         
-        $this
-            ->setKey($key)
-            ->setHash($hash)
-            ->setDepth($depth)
-            ->setStorageName($storageName)
-        ;
+        $storageName = $fileKey->getStorageName();
+        $this->setStorageName($storageName);
         
         if (!isset($rawStorageConfig[$storageName]))
         {
@@ -59,82 +56,23 @@ class StorageConfig
      */
     protected function generateStoragePath()
     {
-        $hash = $this->getHash();
+        $path = $this->getFileKey()->getFilePath();
         
-        $dir = '';
-        
-        for($i = 0; $i < $this->getDepth(); ++$i)
-        {
-            $dir .= $hash[$i].DIRECTORY_SEPARATOR;
-        }
-        
-        return sprintf('%s%s%s%s',
-            ltrim($this->getPathPrefix(), '/'),
+        return sprintf('%s%s%s',
+            trim($this->getPathPrefix(), '/'),
             DIRECTORY_SEPARATOR,
-            $dir,
-            $hash
+            $path
         );
     }
     
     /**
-     *
-     * @return string
+     * @return FileKey
      */
-    public function getKey()
+    public function getFileKey()
     {
-        return $this->key;
+        return $this->fileKey;
     }
-
-    /**
-     *
-     * @param string $key
-     */
-    public function setKey($key)
-    {
-        $this->key = $key;
-        
-        return $this;
-    }
-
-    /**
-     *
-     * @return string
-     */
-    public function getHash()
-    {
-        return $this->hash;
-    }
-
-    /**
-     *
-     * @param string $hash
-     */
-    public function setHash($hash)
-    {
-        $this->hash = $hash;
-        return $this;
-    }
-
-    /**
-     *
-     * @return int
-     */
-    public function getDepth()
-    {
-        return $this->depth;
-    }
-
-    /**
-     *
-     * @param int $depth
-     */
-    public function setDepth($depth)
-    {
-        $this->depth = (int) $depth;
-        
-        return $this;
-    }
-
+    
     /**
      *
      * @return string

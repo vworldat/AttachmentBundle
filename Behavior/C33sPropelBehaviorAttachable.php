@@ -88,6 +88,11 @@ protected \$aNewAllAttachmentsCollection;
  */
 protected \$aNewGeneralAttachmentsCollection;
 
+/**
+ * @var boolean
+ */
+protected \$deleteNewAttachmentFiles = true;
+
 EOF;
         return $attributes;
     }
@@ -252,7 +257,7 @@ protected function processNew{$phpName}File()
         return 0;
     }
     
-    \$this->attachFile(\$this->aNew{$phpName}File, '{$phpName}');
+    \$this->attachFile(\$this->aNew{$phpName}File, '{$phpName}', \$this->deleteNewAttachmentFiles);
     \$this->aNew{$phpName}File = null;
     
     return 1;
@@ -520,12 +525,28 @@ protected function processNewUnsavedFiles(PropelPDO \$con = null)
  *
  * @param File \$file
  * @param string \$fieldName
+ * @param boolean \$deleteAfterCopy
  *
  * @return Attachment   The created Attachment object
  */
-public function attachFile(File \$file, \$fieldName = null)
+public function attachFile(File \$file, \$fieldName = null, \$deleteAfterCopy = true)
 {
-    return \$this->getAttachmentHandler()->storeAndAttachFile(\$file, \$this, \$fieldName);
+    return \$this->getAttachmentHandler()->storeAndAttachFile(\$file, \$this, \$fieldName, \$deleteAfterCopy);
+}
+
+/**
+ * Use this to prevent deletion of new files to be attached during the next save by setting it to false.
+ * It's important to set this during fixtures import if you do not want your fixture attachment files to be deleted.
+ *
+ * @param boolean \$deleteNewAttachmentFiles
+ *
+ * @return {$this->getTable()->getPhpName()}
+ */
+public function setDeleteNewAttachmentFiles(\$deleteNewAttachmentFiles)
+{
+    \$this->deleteNewAttachmentFiles = (boolean) \$deleteNewAttachmentFiles;
+    
+    return \$this;
 }
 
 /**
