@@ -57,12 +57,9 @@ class StorageConfig
     protected function generateStoragePath()
     {
         $path = $this->getFileKey()->getFilePath();
+        $prefix = $this->getPathPrefix();
         
-        return sprintf('%s%s%s',
-            trim($this->getPathPrefix(), '/'),
-            DIRECTORY_SEPARATOR,
-            $path
-        );
+        return ltrim($prefix . '/' . $path, '/');
     }
     
     /**
@@ -139,7 +136,7 @@ class StorageConfig
      */
     public function getPathPrefix()
     {
-        return $this->pathPrefix;
+        return trim($this->pathPrefix, '/');
     }
 
     /**
@@ -159,7 +156,7 @@ class StorageConfig
      */
     public function getBaseUrl()
     {
-        return $this->baseUrl;
+        return rtrim($this->baseUrl, '/');
     }
 
     /**
@@ -193,7 +190,7 @@ class StorageConfig
             throw new \RuntimeException('This storage does not have a configured base url!');
         }
         
-        return $this->getBaseUrl().'/'.$this->getStoragePath();
+        return rtrim($this->getBaseUrl(), '/').'/'.$this->getStoragePath();
     }
     
     /**
@@ -208,7 +205,7 @@ class StorageConfig
             throw new \RuntimeException('This storage does not have a configured base path!');
         }
         
-        return new File($this->getBasePath().'/'.$this->getStoragePath());
+        return new File($this->getBasePath() . DIRECTORY_SEPARATOR . $this->getStoragePath());
     }
     
     /**
@@ -238,7 +235,7 @@ class StorageConfig
      */
     public function getBasePath()
     {
-        return $this->basePath;
+        return rtrim($this->basePath, '/');
     }
 
     /**

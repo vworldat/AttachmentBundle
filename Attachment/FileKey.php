@@ -254,7 +254,7 @@ class FileKey
         
         for($i = 0; $i < $this->getDepth(); ++$i)
         {
-            $dir .= $hash[$i].DIRECTORY_SEPARATOR;
+            $dir .= $hash[$i].'/';
         }
         
         if ('' != $this->getExtension())
@@ -265,11 +265,11 @@ class FileKey
         $parts = array(
         	$this->getClassName(),
             $this->getFieldName(),
-            $dir,
+            rtrim($dir, '/'),
             $hash,
         );
         
-        return implode(DIRECTORY_SEPARATOR, $parts);
+        return implode('/', $parts);
     }
 	
     /**

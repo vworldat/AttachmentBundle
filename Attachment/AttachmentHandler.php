@@ -13,6 +13,7 @@ use c33s\AttachmentBundle\Exception\InputFileNotWritableException;
 use c33s\AttachmentBundle\Exception\CouldNotWriteToStorageException;
 use Symfony\Component\HttpFoundation\File\UploadedFile;
 use c33s\AttachmentBundle\Model\AttachmentLinkQuery;
+use c33s\AttachmentBundle\Exception\StorageDoesNotExistException;
 
 /**
  * AttachmentHandler is the service gapping the bridge between actual files (residing in Gaufrette storages)
@@ -323,7 +324,14 @@ class AttachmentHandler
      */
     public function getFile($key)
     {
-        return $this->getStorageConfigForKey($key)->getFile();
+        try
+        {
+            return $this->getStorageConfigForKey($key)->getFile();
+        }
+        catch (StorageDoesNotExistException $e)
+        {
+            return null;
+        }
     }
     
     /**
