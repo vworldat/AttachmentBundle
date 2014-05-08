@@ -5,6 +5,7 @@ namespace c33s\AttachmentBundle\Attachment;
 use Gaufrette\Filesystem;
 use c33s\AttachmentBundle\Exception\StorageDoesNotExistException;
 use Symfony\Component\HttpFoundation\File\File;
+use c33s\AttachmentBundle\Exception\MissingStorageConfigException;
 
 /**
  * This is used by the AttachmentHandler to temporarily store storage config values.
@@ -187,7 +188,7 @@ class StorageConfig
     {
         if (!$this->hasBaseUrl())
         {
-            throw new \RuntimeException('This storage does not have a configured base url!');
+            throw new MissingStorageConfigException('This storage does not have a configured base url!');
         }
         
         return rtrim($this->getBaseUrl(), '/').'/'.$this->getStoragePath();
@@ -202,7 +203,7 @@ class StorageConfig
     {
         if (!$this->hasBasePath())
         {
-            throw new \RuntimeException('This storage does not have a configured base path!');
+            throw new MissingStorageConfigException('This storage does not have a configured base path!');
         }
         
         return new File($this->getBasePath() . DIRECTORY_SEPARATOR . $this->getStoragePath());

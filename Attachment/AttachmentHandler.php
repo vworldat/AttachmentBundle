@@ -312,7 +312,14 @@ class AttachmentHandler
      */
     public function getFileUrl($key)
     {
-        return $this->getStorageConfigForKey($key)->getFileUrl();
+        try
+        {
+            return $this->getStorageConfigForKey($key)->getFileUrl();
+        }
+        catch (MissingStorageConfigException $e)
+        {
+            return null;
+        }
     }
     
     /**
@@ -329,6 +336,10 @@ class AttachmentHandler
             return $this->getStorageConfigForKey($key)->getFile();
         }
         catch (StorageDoesNotExistException $e)
+        {
+            return null;
+        }
+        catch (MissingStorageConfigException $e)
         {
             return null;
         }
