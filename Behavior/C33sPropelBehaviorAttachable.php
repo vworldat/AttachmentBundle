@@ -93,6 +93,16 @@ protected \$aNewGeneralAttachmentsCollection;
  */
 protected \$deleteNewAttachmentFiles = null;
 
+/**
+ * @var string
+ */
+protected \$aNewAttachmentsDirectory;
+
+/**
+ * @var string
+ */
+protected \$aNewAttachmentsDirectoryFieldName;
+
 EOF;
         return $attributes;
     }
@@ -471,6 +481,40 @@ public function getSpecificAttachmentsQuery(\$fieldName)
 }
 
 /**
+ * Set folder to load attachments during postSave(). Uses AttachmentHandler::storeAndAttachDirectory()
+ *
+ * @param string    \$directory
+ *
+ * @return {$this->getTable()->getPhpName()}
+ */
+public function setAttachmentsLoadFromDirectory(\$directory, \$fieldName = null)
+{
+    \$this->aNewAttachmentsDirectory = \$directory;
+    \$this->aNewAttachmentsDirectoryFieldName = \$fieldName;
+    
+    return \$this;
+}
+
+/**
+ * Process directory to load attachments from if it was set earlier.
+ *
+ * @return int  Number of attached files
+ */
+public function processAttachmentsLoadFromDirectory()
+{
+    if (null === \$this->aNewAttachmentsDirectory)
+    {
+        return 0;
+    }
+    
+    \$added = \$this->getAttachmentHandler()->storeAndAttachDirectory(\$this->aNewAttachmentsDirectory, \$this, \$this->aNewAttachmentsDirectoryFieldName, \$this->deleteNewAttachmentFiles);
+    \$this->aNewAttachmentsDirectory = null;
+    \$this->aNewAttachmentsDirectoryFieldName = null;
+    
+    return \$added;
+}
+
+/**
  * Set collection of Attachment objects to keep as links and those to remove.
  *
  * @param PropelCollection \$toSave
@@ -510,6 +554,8 @@ protected function processNewUnsavedFiles(PropelPDO \$con = null)
     
     // count single modified fields to re-save if necessary
     \$modified = 0;
+    
+    \$modified += \$this->processAttachmentsLoadFromDirectory();
 {$processes}
     if (\$modified > 0)
     {

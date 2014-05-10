@@ -17,23 +17,12 @@ class FileKey
     protected $key;
     protected $filePath;
     
-    public function __construct()
+    public function __construct($key = null)
     {
-        
-    }
-    
-    /**
-     *
-     * @param string $key
-     *
-     * @return FileKey
-     */
-    public static function fromKey($key)
-    {
-        $fileKey = new static();
-        $fileKey->setKey($key);
-        
-        return $fileKey;
+        if (null !== $key)
+        {
+            $this->setKey($key);
+        }
     }
     
     /**

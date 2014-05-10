@@ -14,6 +14,7 @@ use c33s\AttachmentBundle\Exception\CouldNotWriteToStorageException;
 use Symfony\Component\HttpFoundation\File\UploadedFile;
 use c33s\AttachmentBundle\Model\AttachmentLinkQuery;
 use c33s\AttachmentBundle\Exception\StorageDoesNotExistException;
+use Symfony\Component\Finder\Finder;
 
 /**
  * AttachmentHandler is the service gapping the bridge between actual files (residing in Gaufrette storages)
@@ -65,56 +66,7 @@ class AttachmentHandler
         $fileKey = $this->generateKey($file, $config);
         
         $this->copyToStorage($file, $fileKey, $deleteAfterCopy);
-        
-        $attachment = $this->getOrCreateAttachment($file, $config, $fileKey->getKey());
-        
-        if ($file instanceof UploadedFile)
-        {
-            $extension = $file->getClientOriginalExtension();
-            $filename = $file->getClientOriginalName();
-            $basename = basename($filename, '.'.$extension);
-        }
-        else
-        {
-            $extension = $file->getExtension();
-            $filename = $file->getFilename();
-            $basename = $file->getBasename('.'.$extension);
-        }
-        
-        $link = new AttachmentLink();
-        $link
-           ->setAttachment($attachment)
-           ->setModelName($object->getAttachableClassName())
-           ->setModelId($object->getAttachableId())
-           ->setModelField($fieldName)
-           ->setFileName($filename)
-           ->setFileExtension($extension)
-           ->setCustomName($basename)
-        ;
-        
-        if (in_array($fieldName, $object->getAttachableFieldNames()))
-        {
-            $method = 'set'.$fieldName.'Attachment';
-            
-            if (!method_exists($object, $method))
-            {
-                throw new \RuntimeException('Fieldname setter for '.$fieldName.' does not exist in '.get_class($object));
-            }
-            
-            $object->$method($attachment);
-            $link->setIsCurrent(true);
-            
-            AttachmentLinkQuery::create()
-                ->filterByAttachableObject($object)
-                ->filterByModelField($fieldName)
-                ->doUpdate(array('IsCurrent' => false), \Propel::getConnection())
-            ;
-        }
-        
-        /**
-         * TODO: this will not work if the related object is new and does not have an id yet.
-         */
-        $link->save();
+        $attachment = $this->saveToDatabase($file, $object, $config, $fileKey);
         
         if ($deleteAfterCopy)
         {
@@ -122,6 +74,58 @@ class AttachmentHandler
         }
         
         return $attachment;
+    }
+    
+    /**
+     * Attach directory structure to an object. If no fieldName is provided, files inside the directory will be attached
+     * as "general" files (no fieldname), files in direct sub directories will be added using the directory name as fieldName.
+     *
+     * Files and folders starting with a "." will be ignored.
+     *
+     * @param File $file
+     * @param AttachableObjectInterface $object
+     * @param string $fieldName
+     * @param boolean $deleteAfterCopy  Override default file deletion behavior
+     *
+     * @return int      Number of files that have been attached in total
+     */
+    public function storeAndAttachDirectory($directory, AttachableObjectInterface $object, $fieldName = null, $deleteAfterCopy = null)
+    {
+        $finder = Finder::create()
+            ->ignoreDotFiles(true)
+            ->files()
+            ->sortByType()
+            ->depth(0)
+            ->in($directory)
+        ;
+        
+        $count = 0;
+        
+        foreach ($finder as $file)
+        {
+            $this->storeAndAttachFile(new File($file->getRealPath()), $object, $fieldName, $deleteAfterCopy);
+            ++$count;
+        }
+        
+        if (null === $fieldName)
+        {
+            $finder = Finder::create()
+                ->ignoreDotFiles(true)
+                ->directories()
+                ->sortByType()
+                ->depth(0)
+                ->in($directory)
+            ;
+            
+            foreach ($finder as $dir)
+            {
+                $fieldName = $dir->getFileName();
+                
+                $count += $this->storeAndAttachDirectory($dir->getRealPath(), $object, $fieldName, $deleteAfterCopy);
+            }
+        }
+        
+        return $count;
     }
     
     /**
@@ -409,6 +413,73 @@ class AttachmentHandler
     }
     
     /**
+     * Perform filling and saving of attachment database object
+     *
+     * @param File $file
+     * @param AttachableObjectInterface $object
+     * @param AttachmentConfig $config
+     * @param FileKey $fileKey
+     * @throws \RuntimeException
+     *
+     * @return Attachment
+     */
+    protected function saveToDatabase(File $file, AttachableObjectInterface $object, AttachmentConfig $config, FileKey $fileKey)
+    {
+        $attachment = $this->getOrCreateAttachment($file, $config, $fileKey->getKey());
+        $fieldName = $config->getFieldName();
+        
+        if ($file instanceof UploadedFile)
+        {
+            $extension = $file->getClientOriginalExtension();
+            $filename = $file->getClientOriginalName();
+            $basename = basename($filename, '.'.$extension);
+        }
+        else
+        {
+            $extension = $file->getExtension();
+            $filename = $file->getFilename();
+            $basename = $file->getBasename('.'.$extension);
+        }
+        
+        $link = new AttachmentLink();
+        $link
+            ->setAttachment($attachment)
+            ->setModelName($object->getAttachableClassName())
+            ->setModelId($object->getAttachableId())
+            ->setModelField($fieldName)
+            ->setFileName($filename)
+            ->setFileExtension($extension)
+            ->setCustomName($basename)
+        ;
+        
+        if (in_array($fieldName, $object->getAttachableFieldNames()))
+        {
+            $method = 'set'.$fieldName.'Attachment';
+        
+            if (!method_exists($object, $method))
+            {
+                throw new \RuntimeException('Fieldname setter for '.$fieldName.' does not exist in '.get_class($object));
+            }
+        
+            $object->$method($attachment);
+            $link->setIsCurrent(true);
+        
+            AttachmentLinkQuery::create()
+                ->filterByAttachableObject($object)
+                ->filterByModelField($fieldName)
+                ->doUpdate(array('IsCurrent' => false), \Propel::getConnection())
+            ;
+        }
+        
+        /**
+         * TODO: this will not work if the related object is new and does not have an id yet.
+         */
+        $link->save();
+        
+        return $attachment;
+    }
+    
+    /**
      * Get a new Attachment object or an existing one if a file with the same key was already stored.
      *
      * @param File $file
@@ -445,6 +516,6 @@ class AttachmentHandler
      */
     public function getFileKeyFromKey($key)
     {
-        return FileKey::fromKey($key);
+        return new FileKey($key);
     }
 }
