@@ -56,7 +56,7 @@ class AttachmentExtension extends \Twig_Extension
         
         if (null === $filter)
         {
-            return '';
+            return $url;
         }
         
         return $this->cacheManager->getBrowserPath($url, $filter, $absolute);
