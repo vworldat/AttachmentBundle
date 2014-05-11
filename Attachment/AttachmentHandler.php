@@ -516,6 +516,6 @@ class AttachmentHandler
      */
     public function getFileKeyFromKey($key)
     {
-        return new FileKey($key);
+        return new FileKey((string) $key);
     }
 }
