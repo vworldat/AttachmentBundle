@@ -2,12 +2,12 @@
 
 namespace c33s\AttachmentBundle\Model;
 
-use c33s\AttachmentBundle\Model\om\BaseAttachment;
-use Symfony\Component\EventDispatcher\GenericEvent;
-use c33s\AttachmentBundle\Attachment\AttachmentHandler;
-use Symfony\Component\HttpFoundation\File\File;
 use Avocode\FormExtensionsBundle\Form\Model\UploadCollectionFileInterface;
 use c33s\AttachmentBundle\Attachment\AttachableObjectInterface;
+use c33s\AttachmentBundle\Attachment\AttachmentHandlerInterface;
+use c33s\AttachmentBundle\Model\om\BaseAttachment;
+use Symfony\Component\EventDispatcher\GenericEvent;
+use Symfony\Component\HttpFoundation\File\File;
 
 class Attachment extends BaseAttachment implements UploadCollectionFileInterface
 {
@@ -20,7 +20,7 @@ class Attachment extends BaseAttachment implements UploadCollectionFileInterface
     /**
      * Get the AttachmentHandler service instance.
      *
-     * @return AttachmentHandler
+     * @return AttachmentHandlerInterface
      */
     public static function getAttachmentHandler()
     {
@@ -35,9 +35,9 @@ class Attachment extends BaseAttachment implements UploadCollectionFileInterface
     /**
      * Set/inject the AttachmentHandler service instance.
      *
-     * @param AttachmentHandler $attachmentHandler
+     * @param AttachmentHandlerInterface $attachmentHandler
      */
-    public static function setAttachmentHandler($attachmentHandler)
+    public static function setAttachmentHandler(AttachmentHandlerInterface$attachmentHandler)
     {
         static::$attachmentHandler = $attachmentHandler;
     }

@@ -110,6 +110,7 @@ EOF;
     public function objectMethods(OMBuilder $builder)
     {
         $builder->declareClass('c33s\\AttachmentBundle\\Attachment\\AttachableObjectInterface');
+        $builder->declareClass('c33s\\AttachmentBundle\\Attachment\\AttachmentHandlerInterface');
         $builder->declareClass('c33s\\AttachmentBundle\\Model\\Attachment');
         $builder->declareClass('c33s\\AttachmentBundle\\Model\\AttachmentQuery');
         $builder->declareClass('c33s\\AttachmentBundle\\Collection\\UploadCollection');
@@ -282,7 +283,7 @@ EOF;
 /**
  * Get the AttachmentHandler service
  *
- * @return AttachmentHandler
+ * @return AttachmentHandlerInterface
  */
 protected function getAttachmentHandler()
 {

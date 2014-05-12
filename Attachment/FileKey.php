@@ -5,10 +5,11 @@ namespace c33s\AttachmentBundle\Attachment;
 use Symfony\Component\DependencyInjection\Container;
 use c33s\AttachmentBundle\Exception\InvalidKeyException;
 use c33s\AttachmentBundle\Exception\MissingKeyParameterException;
+use c33s\AttachmentBundle\Exception\StorageDoesNotExistException;
 
 class FileKey
 {
-    protected $storageName;
+    protected $storage;
     protected $className;
     protected $fieldName;
     protected $depth;
@@ -43,6 +44,11 @@ class FileKey
     public function setStorageName($storageName)
     {
         $this->storageName = $this->clean($storageName);
+        if ($storageName !== $this->storageName)
+        {
+            // storage name was modified during cleaning. this should not happen. choose your storage name wisely!
+            throw new StorageDoesNotExistException('Storage name does not meet requirements to use inside key');
+        }
         
         return $this;
     }

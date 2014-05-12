@@ -52,7 +52,14 @@ class AttachmentExtension extends \Twig_Extension
             return '';
         }
         
-        $url = $this->attachmentHandler->getFileUrl($key);
+        try
+        {
+            $url = $this->attachmentHandler->getFileUrl($key);
+        }
+        catch (AttachmentException $e)
+        {
+            return '';
+        }
         
         if (null === $filter)
         {

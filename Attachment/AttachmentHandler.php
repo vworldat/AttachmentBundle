@@ -2,19 +2,23 @@
 
 namespace c33s\AttachmentBundle\Attachment;
 
-use c33s\AttachmentBundle\Model\Attachment;
-use Symfony\Component\HttpFoundation\File\File;
-use Knp\Bundle\GaufretteBundle\FilesystemMap;
-use c33s\AttachmentBundle\Model\AttachmentQuery;
-use c33s\AttachmentBundle\Model\AttachmentLink;
-use Gaufrette\Adapter\Local;
+use c33s\AttachmentBundle\Exception\CouldNotWriteToStorageException;
+use c33s\AttachmentBundle\Exception\FilesystemDoesNotExistException;
 use c33s\AttachmentBundle\Exception\InputFileNotReadableException;
 use c33s\AttachmentBundle\Exception\InputFileNotWritableException;
-use c33s\AttachmentBundle\Exception\CouldNotWriteToStorageException;
-use Symfony\Component\HttpFoundation\File\UploadedFile;
-use c33s\AttachmentBundle\Model\AttachmentLinkQuery;
+use c33s\AttachmentBundle\Exception\InvalidAttachableFieldNameException;
+use c33s\AttachmentBundle\Exception\InvalidHashCallableException;
 use c33s\AttachmentBundle\Exception\StorageDoesNotExistException;
+use c33s\AttachmentBundle\Model\Attachment;
+use c33s\AttachmentBundle\Model\AttachmentLink;
+use c33s\AttachmentBundle\Model\AttachmentLinkQuery;
+use c33s\AttachmentBundle\Model\AttachmentQuery;
+use c33s\AttachmentBundle\Schema\AttachmentSchema;
+use c33s\AttachmentBundle\Storage\Storage;
+use Knp\Bundle\GaufretteBundle\FilesystemMap;
 use Symfony\Component\Finder\Finder;
+use Symfony\Component\HttpFoundation\File\File;
+use Symfony\Component\HttpFoundation\File\UploadedFile;
 
 /**
  * AttachmentHandler is the service gapping the bridge between actual files (residing in Gaufrette storages)
@@ -23,10 +27,25 @@ use Symfony\Component\Finder\Finder;
  * @author david
  *
  */
-class AttachmentHandler
+class AttachmentHandler implements AttachmentHandlerInterface
 {
-    protected $rawConfig;
-    protected $configs = array();
+    /**
+     *
+     * @var array[Storage]
+     */
+    protected $storages = array();
+    
+    /**
+     *
+     * @var array[AttachmentSchema]
+     */
+    protected $attachmentSchemas = array();
+    
+    /**
+     *
+     * @var AttachmentSchema
+     */
+    protected $defaultAttachmentSchema;
     
     /**
      *
@@ -34,17 +53,84 @@ class AttachmentHandler
      */
     protected $filesystemMap;
     
-    public function __construct(array $rawConfig, FilesystemMap $filesystemMap)
+    /**
+     * Key class to use for generating and parsing attachment file keys.
+     * Override to implement custom key pattern logic.
+     *
+     * @var string
+     */
+    protected $fileKeyClass = 'c33s\\AttachmentBundle\\Attachment\\FileKey';
+    
+    /**
+     * Remembered key => FileKey associations
+     *
+     * @var array
+     */
+    protected $fileKeys = array();
+    
+    /**
+     *
+     * @param array $storageConfig          The "storages" path of the config
+     * @param array $attachmentConfig       The "attachments" path of the config
+     * @param FilesystemMap $filesystemMap  The FilesystemMap provided by KnpGaufretteBundle
+     *
+     * @throws FilesystemDoesNotExistException
+     * @throws StorageDoesNotExistException
+     * @throws InvalidHashCallableException
+     */
+    public function __construct(array $storageConfig, array $attachmentConfig, FilesystemMap $filesystemMap)
     {
-        $this->rawConfig = $rawConfig;
         $this->filesystemMap = $filesystemMap;
+        
+        foreach ($storageConfig as $storageName => $config)
+        {
+            try
+            {
+                $filesystem = $filesystemMap->get($config['filesystem']);
+            }
+            catch (\InvalidArgumentException $e)
+            {
+                throw new FilesystemDoesNotExistException('Unknown gaufrette filesystem name: '.$config['filesystem'].' used for storage '.$storageName);
+            }
+            
+            $this->storages[$storageName] = new Storage($storageName, $filesystem, $config['path_prefix'], $config['base_url'], $config['base_path']);
+        }
+        
+        $this->defaultAttachmentSchema = $this->createAttachmentSchema($attachmentConfig);
+        
+        foreach ($attachmentConfig['models'] as $modelName => $modelConfig)
+        {
+            $this->attachmentSchemas[$modelName] = $this->createAttachmentSchema($modelConfig);
+            
+            foreach ($modelConfig['fields'] as $fieldName => $fieldConfig)
+            {
+                $this->attachmentSchemas[$modelName][$fieldName] = $this->createAttachmentSchema($fieldConfig);
+            }
+        }
+    }
+    
+    /**
+     * Create AttachmentSchema object holding information about how to handle specific model classes and field names.
+     *
+     * @param array $config
+     * @throws StorageDoesNotExistException
+     *
+     * @return AttachmentSchema
+     */
+    protected function createAttachmentSchema(array $config)
+    {
+        $storage = $this->getStorage($config['storage']);
+        
+        return new AttachmentSchema($storage, $config['hash_callable'], $config['storage_depth']);
     }
     
     /**
      * Store a new attachment file for the given object and optional object field name.
      * There is no need for the field name to exist explicitly inside the object.
      *
-     * By default, new files will be deleted from their source if they are an instance of UploadedFile, but NOT otherwise.
+     * @throws InputFileNotReadableException
+     * @throws InputFileNotWritableException
+     * @throws CouldNotWriteToStorageException
      *
      * @param File $file
      * @param AttachableObjectInterface $object
@@ -57,16 +143,14 @@ class AttachmentHandler
     {
         if (null === $deleteAfterCopy)
         {
-            $deleteAfterCopy = $file instanceof UploadedFile;
+            $deleteAfterCopy = $this->guessDeleteAfterCopy($file, $object, $fieldName);
         }
         
         $this->checkFile($file, $deleteAfterCopy);
         
-        $config = $this->getConfigForObject($object, $fieldName);
-        $fileKey = $this->generateKey($file, $config);
-        
-        $this->copyToStorage($file, $fileKey, $deleteAfterCopy);
-        $attachment = $this->saveToDatabase($file, $object, $config, $fileKey);
+        $fileKey = $this->generateKey($file, $object, $fieldName);
+        $this->copyToStorage($file, $fileKey);
+        $attachment = $this->saveToDatabase($file, $object, $fieldName, $fileKey);
         
         if ($deleteAfterCopy)
         {
@@ -81,6 +165,10 @@ class AttachmentHandler
      * as "general" files (no fieldname), files in direct sub directories will be added using the directory name as fieldName.
      *
      * Files and folders starting with a "." will be ignored.
+     *
+     * @throws InputFileNotReadableException
+     * @throws InputFileNotWritableException
+     * @throws CouldNotWriteToStorageException
      *
      * @param File $file
      * @param AttachableObjectInterface $object
@@ -129,6 +217,21 @@ class AttachmentHandler
     }
     
     /**
+     * Guess the "delete after copy" setting if NULL was given.
+     * The default logic is to delete input files if they were uploaded, so it checks the file class for UploadedFile
+     *
+     * @param File $file
+     * @param AttachableObjectInterface $object
+     * @param string $fieldName
+     *
+     * @return boolean
+     */
+    protected function guessDeleteAfterCopy(File $file, AttachableObjectInterface $object, $fieldName = null)
+    {
+        return $file instanceof UploadedFile;
+    }
+    
+    /**
      * Perform some checks to see if the given file is valid and ready to use.
      *
      * @throws InputFileNotReadableException
@@ -155,24 +258,97 @@ class AttachmentHandler
     }
     
     /**
-     * Fetch the config to use for the given object type and fieldname.
+     * Fetch the schema to use for the given object type and fieldname. This checks if there are specific settings
+     * for the given object/fieldName combination and else returns the default schema.
      *
      * @param AttachableObjectInterface $object
      * @param string $fieldName
      *
-     * @return AttachmentConfig
+     * @return AttachmentSchema
      */
-    protected function getConfigForObject(AttachableObjectInterface $object, $fieldName)
+    protected function getSchemaForObject(AttachableObjectInterface $object, $fieldName)
     {
         $className = $object->getAttachableClassName();
-        $configKey = sprintf('%s:%s', $className, $fieldName);
         
-        if (!isset($this->configs[$configKey]))
+        if (isset($this->attachmentSchemas[$className][$fieldName]))
         {
-            $this->configs[$configKey] = new AttachmentConfig($this->rawConfig['attachments'], $className, $fieldName);
+            return $this->attachmentSchemas[$className][$fieldName];
+        }
+        if (isset($this->attachmentSchemas[$className]))
+        {
+            return $this->attachmentSchemas[$className];
         }
         
-        return $this->configs[$configKey];
+        return $this->defaultAttachmentSchema;
+    }
+    
+    /**
+     * Generate the file key for the given file path and config.
+     *
+     * @param File $file
+     * @param AttachmentSchema $schema
+     *
+     * @return FileKey
+     */
+    protected function generateKey(File $file, AttachableObjectInterface $object, $fieldName)
+    {
+        $schema = $this->getSchemaForObject($object, $fieldName);
+        
+        if ($file instanceof UploadedFile)
+        {
+            $extension = $file->getClientOriginalExtension();
+        }
+        else
+        {
+            $extension = $file->getExtension();
+        }
+        
+        $hash = $this->generateFileHash($file, $schema);
+        
+        $fileKey = new $this->fileKeyClass();
+        $fileKey
+            ->setHash($hash)
+            ->setExtension($extension)
+            ->setDepth($schema->getStorageDepth())
+            ->setClassName($object->getAttachableClassName())
+            ->setFieldName($fieldName)
+            ->setStorageName($schema->getStorage()->getName())
+        ;
+        
+        // This triggers the generation inside the key. If there are any exceptions, we want them here for clarity.
+        $fileKey->getKey();
+        
+        return $fileKey;
+    }
+    
+    /**
+     * This generates the actual file hash by calling the hash callable, passing the file path.
+     *
+     * @param File $file
+     * @param AttachmentSchema $schema
+     *
+     * @return string
+     */
+    protected function generateFileHash(File $file, AttachmentSchema $schema)
+    {
+        return call_user_func($schema->getHashCallable(), $file->getRealPath());
+    }
+    
+    /**
+     * Get the storage with the given name
+     *
+     * @param string $name
+     *
+     * @return Storage
+     */
+    protected function getStorage($name)
+    {
+        if (!array_key_exists($name, $this->storages))
+        {
+            throw new StorageDoesNotExistException('Invalid storage name: '.$name);
+        }
+        
+        return $this->storages[$name];
     }
     
     /**
@@ -183,11 +359,10 @@ class AttachmentHandler
      */
     protected function copyToStorage(File $file, FileKey $fileKey)
     {
-        $config = $this->getStorageConfigForFileKey($fileKey);
+        $storage = $this->getStorage($fileKey->getStorageName());
+        $storagePath = $this->getStoragePath($storage, $fileKey);
         
-        $filesystem = $config->getFilesystem();
-        $storagePath = $config->getStoragePath();
-        
+        $filesystem = $storage->getFilesystem();
         if (!$filesystem->has($storagePath))
         {
             $size = $file->getSize();
@@ -201,159 +376,166 @@ class AttachmentHandler
     }
     
     /**
-     * Extract info from the given key.
+     * Get the path inside the storage for the given Storage and FileKey.
+     *
+     * @param Storage $storage
+     * @param FileKey $fileKey
+     *
+     * @return string
+     */
+    protected function getStoragePath(Storage $storage, FileKey $fileKey)
+    {
+        return ltrim($storage->getPathPrefix().'/'.$fileKey->getFilePath(), '/');
+    }
+    
+    /**
+     * Perform filling and saving of attachment database object
+     *
+     * @throws InvalidAttachableFieldNameException
+     *
+     * @param File $file
+     * @param AttachableObjectInterface $object
+     * @param string $fieldName
+     * @param FileKey $fileKey
+     *
+     * @return Attachment
+     */
+    protected function saveToDatabase(File $file, AttachableObjectInterface $object, $fieldName, FileKey $fileKey)
+    {
+        $attachment = $this->getOrCreateAttachment($file, $object, $fieldName, $fileKey);
+        $link = $this->createAttachmentLink($file, $object, $fieldName, $attachment);
+        
+        if (in_array($fieldName, $object->getAttachableFieldNames()))
+        {
+            $method = 'set'.$fieldName.'Attachment';
+        
+            if (!method_exists($object, $method))
+            {
+                throw new InvalidAttachableFieldNameException('Fieldname setter for '.$fieldName.' does not exist in '.get_class($object));
+            }
+            
+            $object->$method($attachment);
+            $link->setIsCurrent(true);
+        
+            AttachmentLinkQuery::create()
+                ->filterByAttachableObject($object)
+                ->filterByModelField($fieldName)
+                ->doUpdate(array('IsCurrent' => false), \Propel::getConnection())
+            ;
+        }
+        
+        /**
+         * TODO: this will not work if the related object is new and does not have an id yet.
+         */
+        $link->save();
+        
+        return $attachment;
+    }
+    
+    /**
+     * Get a new Attachment object or an existing one if a file with the same key was already stored.
+     *
+     * @param File $file
+     * @param AttachableObjectInterface $object
+     * @param string $fieldName
+     * @param FileKey $fileKey
+     *
+     * @return Attachment
+     */
+    protected function getOrCreateAttachment(File $file, AttachableObjectInterface $object, $fieldName, FileKey $fileKey)
+    {
+        $attachment = $this->getAttachment($fileKey->getKey());
+        
+        if (null === $attachment)
+        {
+            $schema = $this->getSchemaForObject($object, $fieldName);
+            
+            $attachment = new Attachment();
+            $attachment
+                ->setFileKey($fileKey->getKey())
+                ->setFileSize($file->getSize())
+                ->setFileType($file->getMimeType())
+                ->setStorageName($schema->getStorage()->getName())
+                ->setStorageDepth($schema->getStorageDepth())
+                ->setHashType($schema->getHashCallableAsString())
+            ;
+        }
+        
+        return $attachment;
+    }
+    
+    /**
+     * Create new AttachmentLink object for the given parameters.
+     *
+     * @param File $file
+     * @param AttachableObjectInterface $object
+     * @param string $fieldName
+     * @param Attachment $attachment
+     *
+     * @return AttachmentLink
+     */
+    protected function createAttachmentLink(File $file, AttachableObjectInterface $object, $fieldName, Attachment $attachment)
+    {
+        if ($file instanceof UploadedFile)
+        {
+            $extension = $file->getClientOriginalExtension();
+            $filename = $file->getClientOriginalName();
+            $basename = basename($filename, '.'.$extension);
+        }
+        else
+        {
+            $extension = $file->getExtension();
+            $filename = $file->getFilename();
+            $basename = $file->getBasename('.'.$extension);
+        }
+        
+        $link = new AttachmentLink();
+        $link
+            ->setAttachment($attachment)
+            ->setModelName($object->getAttachableClassName())
+            ->setModelId($object->getAttachableId())
+            ->setModelField($fieldName)
+            ->setFileName($filename)
+            ->setFileExtension($extension)
+            ->setCustomName($basename)
+        ;
+        
+        return $link;
+    }
+    
+    /**
+     * Convert an existing string key to a FileKey object for further usage.
+     *
+     * @throws InvalidKeyException              if the key cannot be parsed
      *
      * @param string $key
      *
-     * @return StorageConfig
+     * @return FileKey
      */
-    protected function getStorageConfigForFileKey(FileKey $fileKey)
+    protected function getFileKey($key)
     {
-        if (!isset($this->configs[$fileKey->getKey()]))
+        $key = (string) $key;
+        if (!array_key_exists($key, $this->fileKeys))
         {
-            $config = new StorageConfig($fileKey, $this->rawConfig['storages']);
-            
-            $config->setFilesystem($this->filesystemMap->get($config->getFilesystemName()));
-            
-            $this->configs[$fileKey->getKey()] = $config;
+            $this->fileKeys[$key] = new FileKey($key);
         }
         
-        return $this->configs[$fileKey->getKey()];
+        return $this->fileKeys[$key];
     }
     
     /**
      * Shortcut function for all those calls with string keys.
      *
+     * @throws InvalidKeyException              if the key cannot be parsed
+     * @throws StorageDoesNotExistException     if the storage defined by the key is unknown
+     *
      * @param string $key
      *
      * @return StorageConfig
      */
-    protected function getStorageConfigForKey($key)
+    protected function getStorageByKey($key)
     {
-        return $this->getStorageConfigForFileKey($this->getFileKeyFromKey($key));
-    }
-    
-    /**
-     * Generate the file key for the given file path and config.
-     *
-     * @param File $file
-     * @param AttachmentConfig $config
-     *
-     * @return FileKey
-     */
-    protected function generateKey(File $file, AttachmentConfig $config)
-    {
-        $hashCallable = $config->getHashCallable();
-        
-        if (!is_callable($hashCallable))
-        {
-            throw new \RuntimeException('Invalid file hashing callable: '.$hashCallable);
-        }
-        
-        if ($file instanceof UploadedFile)
-        {
-            $extension = $file->getClientOriginalExtension();
-        }
-        else
-        {
-            $extension = $file->getExtension();
-        }
-        
-        $fileKey = new FileKey();
-        $fileKey
-            ->setHash($this->generateFileHash($file, $hashCallable))
-            ->setExtension($extension)
-            ->setDepth($config->getStorageDepth())
-            ->setClassName($config->getClassName())
-            ->setFieldName($config->getFieldName())
-            ->setStorageName($config->getStorageName())
-        ;
-        
-        // This triggers the generation inside the key. If there are any exceptions, we want them here for clarity.
-        $fileKey->getKey();
-        
-        return $fileKey;
-    }
-    
-    /**
-     * This generates the actual file hash by calling the hash callable, passing the file path.
-     *
-     * @param File $file
-     * @param callable $hashCallable
-     *
-     * @return string
-     */
-    protected function generateFileHash(File $file, $hashCallable)
-    {
-        return call_user_func($hashCallable, $file->getRealPath());
-    }
-    
-    /**
-     * Check if the given file is stored locally.
-     *
-     * @param string $key
-     *
-     * @return boolean
-     */
-    public function isLocalFile($key)
-    {
-        $config = $this->getStorageConfigForKey($key);
-        
-        return $config->getFilesystem()->getAdapter() instanceof Local;
-    }
-    
-    /**
-     * Check if there could be a URL to this key.
-     *
-     * @param string $key
-     *
-     * @return boolean
-     */
-    public function hasFileUrl($key)
-    {
-        return $this->getStorageConfigForKey($key)->hasBaseUrl();
-    }
-    
-    /**
-     * Get the URL for the given file key.
-     *
-     * @param string $key
-     *
-     * @return $string
-     */
-    public function getFileUrl($key)
-    {
-        try
-        {
-            return $this->getStorageConfigForKey($key)->getFileUrl();
-        }
-        catch (MissingStorageConfigException $e)
-        {
-            return null;
-        }
-    }
-    
-    /**
-     * Get a File object for the given key. The file has to exist locally.
-     *
-     * @param string $key
-     *
-     * @return File
-     */
-    public function getFile($key)
-    {
-        try
-        {
-            return $this->getStorageConfigForKey($key)->getFile();
-        }
-        catch (StorageDoesNotExistException $e)
-        {
-            return null;
-        }
-        catch (MissingStorageConfigException $e)
-        {
-            return null;
-        }
+        return $this->getStorage($this->getFileKey($key)->getStorageName());
     }
     
     /**
@@ -363,13 +545,99 @@ class AttachmentHandler
      */
     protected function removeFile($key)
     {
-        $config = $this->getStorageConfigForKey($key);
+        $fileKey = $this->getFileKey($key);
+        $storage = $this->getStorage($fileKey->getStorageName());
         
-        return $config->getFilesystem()->delete($config->getStoragePath());
+        return $storage->getFilesystem()->delete($this->getStoragePath($storage, $fileKey));
     }
     
     /**
-     * Check if the given file exists inside its storage.
+     * Check if the given file is stored locally.
+     * This checks for the "Local" Gaufrette Adapter.
+     *
+     * @throws InvalidKeyException              if the key cannot be parsed
+     * @throws StorageDoesNotExistException     if the storage defined by the key is unknown
+     *
+     * @param string $key
+     *
+     * @return boolean
+     */
+    public function hasLocalFile($key)
+    {
+        $storage = $this->getStorageByKey($key);
+        
+        return $storage->isLocal();
+    }
+    
+    /**
+     * Check if there could be a URL to this key.
+     *
+     * @throws InvalidKeyException              if the key cannot be parsed
+     * @throws StorageDoesNotExistException     if the storage defined by the key is unknown
+     *
+     * @param string $key
+     *
+     * @return boolean
+     */
+    public function hasFileUrl($key)
+    {
+        return $this->getStorageByKey($key)->hasBaseUrl();
+    }
+    
+    /**
+     * Get the URL for the given file key.
+     *
+     * @throws InvalidKeyException              if the key cannot be parsed
+     * @throws StorageDoesNotExistException     if the storage defined by the key is unknown
+     * @throws MissingStorageConfigException    if the storage config for the key's storage does not contain a base url
+     *
+     * @param string $key
+     *
+     * @return $string
+     */
+    public function getFileUrl($key)
+    {
+        $fileKey = $this->getFileKey($key);
+        $storage = $this->getStorage($fileKey->getStorageName());
+        
+        if (!$storage->hasBaseUrl())
+        {
+            throw new MissingStorageConfigException('This storage does not have a configured base url!');
+        }
+        
+        return $storage->getBaseUrl().'/'.$this->getStoragePath($storage, $fileKey);
+    }
+    
+    /**
+     * Get a File object for the given key. The file has to exist locally (the storage needs a base path)
+     *
+     * @throws InvalidKeyException              if the key cannot be parsed
+     * @throws StorageDoesNotExistException     if the storage defined by the key is unknown
+     * @throws MissingStorageConfigException    if the storage config for the key's storage does not contain a base path
+     *
+     * @param string $key
+     *
+     * @return File
+     */
+    public function getFile($key)
+    {
+        $fileKey = $this->getFileKey($key);
+        $storage = $this->getStorage($fileKey->getStorageName());
+        
+        if (!$storage->hasBasePath())
+        {
+            throw new MissingStorageConfigException('This storage does not have a configured base path!');
+        }
+        
+        return new File($storage->getBasePath().'/'.$this->getStoragePath($storage, $fileKey));
+    }
+    
+    /**
+     * Check if the given file exists inside its storage. Actually you should never have to do this unless you are
+     * manipulating the storage by hand.
+     *
+     * @throws InvalidKeyException              if the key cannot be parsed
+     * @throws StorageDoesNotExistException     if the storage defined by the key is unknown
      *
      * @param string $key
      *
@@ -377,9 +645,10 @@ class AttachmentHandler
      */
     public function fileExists($key)
     {
-        $config = $this->getStorageConfigForKey($key);
+        $fileKey = $this->getFileKey($key);
+        $storage = $this->getStorage($fileKey->getStorageName());
         
-        return $config->getFilesystem()->has($config->getStoragePath());
+        return $storage->getFilesystem()->has($this->getStoragePath($storage, $fileKey));
     }
     
     /**
@@ -410,112 +679,5 @@ class AttachmentHandler
             ->filterByFileKey($key)
             ->count() > 0
         ;
-    }
-    
-    /**
-     * Perform filling and saving of attachment database object
-     *
-     * @param File $file
-     * @param AttachableObjectInterface $object
-     * @param AttachmentConfig $config
-     * @param FileKey $fileKey
-     * @throws \RuntimeException
-     *
-     * @return Attachment
-     */
-    protected function saveToDatabase(File $file, AttachableObjectInterface $object, AttachmentConfig $config, FileKey $fileKey)
-    {
-        $attachment = $this->getOrCreateAttachment($file, $config, $fileKey->getKey());
-        $fieldName = $config->getFieldName();
-        
-        if ($file instanceof UploadedFile)
-        {
-            $extension = $file->getClientOriginalExtension();
-            $filename = $file->getClientOriginalName();
-            $basename = basename($filename, '.'.$extension);
-        }
-        else
-        {
-            $extension = $file->getExtension();
-            $filename = $file->getFilename();
-            $basename = $file->getBasename('.'.$extension);
-        }
-        
-        $link = new AttachmentLink();
-        $link
-            ->setAttachment($attachment)
-            ->setModelName($object->getAttachableClassName())
-            ->setModelId($object->getAttachableId())
-            ->setModelField($fieldName)
-            ->setFileName($filename)
-            ->setFileExtension($extension)
-            ->setCustomName($basename)
-        ;
-        
-        if (in_array($fieldName, $object->getAttachableFieldNames()))
-        {
-            $method = 'set'.$fieldName.'Attachment';
-        
-            if (!method_exists($object, $method))
-            {
-                throw new \RuntimeException('Fieldname setter for '.$fieldName.' does not exist in '.get_class($object));
-            }
-        
-            $object->$method($attachment);
-            $link->setIsCurrent(true);
-        
-            AttachmentLinkQuery::create()
-                ->filterByAttachableObject($object)
-                ->filterByModelField($fieldName)
-                ->doUpdate(array('IsCurrent' => false), \Propel::getConnection())
-            ;
-        }
-        
-        /**
-         * TODO: this will not work if the related object is new and does not have an id yet.
-         */
-        $link->save();
-        
-        return $attachment;
-    }
-    
-    /**
-     * Get a new Attachment object or an existing one if a file with the same key was already stored.
-     *
-     * @param File $file
-     * @param AttachmentConfig $config
-     * @param string $key
-     *
-     * @return Attachment
-     */
-    protected function getOrCreateAttachment(File $file, AttachmentConfig $config, $key)
-    {
-        $attachment = $this->getAttachment($key);
-        
-        if (null === $attachment)
-        {
-            $attachment = new Attachment();
-            $attachment
-                ->setFileKey($key)
-                ->setFileSize($file->getSize())
-                ->setFileType($file->getMimeType())
-                ->setStorageName($config->getStorageName())
-                ->setStorageDepth($config->getStorageDepth())
-                ->setHashType($config->getHashCallableAsString())
-            ;
-        }
-        
-        return $attachment;
-    }
-    
-    /**
-     * Convert an existing string key to a FileKey object for further usage.
-     *
-     * @param string $key
-     * @return FileKey
-     */
-    public function getFileKeyFromKey($key)
-    {
-        return new FileKey((string) $key);
     }
 }

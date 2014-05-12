@@ -25,6 +25,7 @@ class c33sAttachmentExtension extends Extension
         $loader = new Loader\XmlFileLoader($container, new FileLocator(__DIR__.'/../Resources/config'));
         $loader->load('services.xml');
         
-        $container->setParameter('c33s_attachment.handler.config', $config);
+        $container->setParameter('c33s_attachment.handler.storage_config', $config['storages']);
+        $container->setParameter('c33s_attachment.handler.attachment_config', $config['attachments']);
     }
 }
