@@ -3,9 +3,6 @@
 namespace c33s\AttachmentBundle\Storage;
 
 use Gaufrette\Filesystem;
-use c33s\AttachmentBundle\Exception\StorageDoesNotExistException;
-use Symfony\Component\HttpFoundation\File\File;
-use c33s\AttachmentBundle\Exception\MissingStorageConfigException;
 use Gaufrette\Adapter\Local;
 
 /**

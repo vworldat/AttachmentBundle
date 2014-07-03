@@ -247,7 +247,8 @@ class FileKey
         
         $dir = '';
         
-        for($i = 0; $i < $this->getDepth(); ++$i)
+        $depth = $this->getDepth();
+        for($i = 0; $i < $depth; ++$i)
         {
             $dir .= $hash[$i].'/';
         }

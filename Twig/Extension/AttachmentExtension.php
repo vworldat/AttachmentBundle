@@ -4,6 +4,7 @@ namespace c33s\AttachmentBundle\Twig\Extension;
 
 use c33s\AttachmentBundle\Attachment\AttachmentHandler;
 use Liip\ImagineBundle\Imagine\Cache\CacheManager;
+use c33s\AttachmentBundle\Exception\AttachmentException;
 
 class AttachmentExtension extends \Twig_Extension
 {

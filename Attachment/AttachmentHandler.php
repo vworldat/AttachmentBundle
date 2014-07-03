@@ -19,6 +19,8 @@ use Knp\Bundle\GaufretteBundle\FilesystemMap;
 use Symfony\Component\Finder\Finder;
 use Symfony\Component\HttpFoundation\File\File;
 use Symfony\Component\HttpFoundation\File\UploadedFile;
+use c33s\AttachmentBundle\Exception\MissingStorageConfigException;
+use c33s\AttachmentBundle\Exception\AttachmentException;
 
 /**
  * AttachmentHandler is the service gapping the bridge between actual files (residing in Gaufrette storages)
@@ -141,6 +143,8 @@ class AttachmentHandler implements AttachmentHandlerInterface
      */
     public function storeAndAttachFile(File $file, AttachableObjectInterface $object, $fieldName = null, $deleteAfterCopy = null)
     {
+        $this->checkAttachableObject($object);
+        
         if (null === $deleteAfterCopy)
         {
             $deleteAfterCopy = $this->guessDeleteAfterCopy($file, $object, $fieldName);
@@ -214,6 +218,20 @@ class AttachmentHandler implements AttachmentHandlerInterface
         }
         
         return $count;
+    }
+    
+    /**
+     * Check if the AttachableObject actually delivers and ID that is not null
+     *
+     * @param AttachableObjectInterface $object
+     * @throws AttachmentException
+     */
+    protected function checkAttachableObject(AttachableObjectInterface $object)
+    {
+        if (null === $object->getAttachableId())
+        {
+            throw new AttachmentException('The object did not provide a valid ID to store the attachment link');
+        }
     }
     
     /**
@@ -416,7 +434,7 @@ class AttachmentHandler implements AttachmentHandlerInterface
             
             $object->$method($attachment);
             $link->setIsCurrent(true);
-        
+            
             AttachmentLinkQuery::create()
                 ->filterByAttachableObject($object)
                 ->filterByModelField($fieldName)
@@ -424,9 +442,6 @@ class AttachmentHandler implements AttachmentHandlerInterface
             ;
         }
         
-        /**
-         * TODO: this will not work if the related object is new and does not have an id yet.
-         */
         $link->save();
         
         return $attachment;

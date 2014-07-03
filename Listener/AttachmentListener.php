@@ -3,8 +3,6 @@
 namespace c33s\AttachmentBundle\Listener;
 
 use Symfony\Component\EventDispatcher\GenericEvent;
-use c33s\AttachmentBundle\Attachment\AttachmentHandler;
-use Symfony\Component\DependencyInjection\ContainerAwareInterface;
 use Symfony\Component\DependencyInjection\ContainerAware;
 use c33s\AttachmentBundle\Model\Attachment;
 

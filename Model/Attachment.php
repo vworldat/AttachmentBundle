@@ -3,7 +3,6 @@
 namespace c33s\AttachmentBundle\Model;
 
 use Avocode\FormExtensionsBundle\Form\Model\UploadCollectionFileInterface;
-use c33s\AttachmentBundle\Attachment\AttachableObjectInterface;
 use c33s\AttachmentBundle\Attachment\AttachmentHandlerInterface;
 use c33s\AttachmentBundle\Model\om\BaseAttachment;
 use Symfony\Component\EventDispatcher\GenericEvent;

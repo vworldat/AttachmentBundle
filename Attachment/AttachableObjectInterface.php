@@ -2,8 +2,6 @@
 
 namespace c33s\AttachmentBundle\Attachment;
 
-use c33s\AttachmentBundle\Model\Attachment;
-
 /**
  * Objects which want to allow attachments must implement this interface
  *
