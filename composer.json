@@ -17,17 +17,20 @@
     "autoload": {
         "psr-0": {
             "c33s\\AttachmentBundle": ""
-        }
+        },
+        "classmap": [
+            "/Behavior"
+        ]
     },
     "target-dir": "c33s/AttachmentBundle",
     "minimum-stability": "stable",
     "require": {
         "php": ">=5.3.3",
+        "symfony/symfony": ">=2.3.0",
         "propel/propel-bundle": ">=1.2.0",
         "knplabs/knp-gaufrette-bundle": "0.1.*",
-        "willdurand/propel-eventdispatcher-bundle": "1.0.*"
-    },
-    "suggest": {
-        "avocode/form-extensions-bundle": "dev-master"
+        "willdurand/propel-eventdispatcher-bundle": "1.0.*",
+        "cedriclombardot/admingenerator-generator-bundle": ">=1.0.0",
+        "avocode/form-extensions-bundle": ">=0.1.0"
     }
 }
