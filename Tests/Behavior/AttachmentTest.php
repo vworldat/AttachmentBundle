@@ -11,6 +11,8 @@ class AttachmentTest extends \PHPUnit_Framework_TestCase
     public function testBuildAttachmentModels()
     {
         $attachment = new Attachment();
+        
+        $this->assertInstanceOf('c33s\\AttachmentBundle\\Model\\Attachment', $attachment);
     }
     
     public function testHasRememberedNewData()
