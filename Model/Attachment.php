@@ -7,6 +7,7 @@ use c33s\AttachmentBundle\Attachment\AttachmentHandlerInterface;
 use c33s\AttachmentBundle\Model\om\BaseAttachment;
 use Symfony\Component\EventDispatcher\GenericEvent;
 use Symfony\Component\HttpFoundation\File\File;
+use c33s\AttachmentBundle\Attachment\AttachableObjectInterface;
 
 class Attachment extends BaseAttachment implements UploadCollectionFileInterface
 {
