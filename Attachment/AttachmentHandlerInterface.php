@@ -15,10 +15,11 @@ interface AttachmentHandlerInterface
      * @param AttachableObjectInterface $object
      * @param string $fieldName
      * @param boolean $deleteAfterCopy  Override default file deletion behavior
+     * @param string $customFilename    Optional custom file name to use for the created link
      *
      * @return Attachment   The created Attachment object
      */
-    public function storeAndAttachFile(File $file, AttachableObjectInterface $object, $fieldName = null, $deleteAfterCopy = null);
+    public function storeAndAttachFile(File $file, AttachableObjectInterface $object, $fieldName = null, $deleteAfterCopy = null, $customFilename = null);
     
     /**
      * Attach directory structure to an object. If no fieldName is provided, files inside the directory will be attached

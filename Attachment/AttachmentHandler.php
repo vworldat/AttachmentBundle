@@ -138,10 +138,11 @@ class AttachmentHandler implements AttachmentHandlerInterface
      * @param AttachableObjectInterface $object
      * @param string $fieldName
      * @param boolean $deleteAfterCopy  Override default file deletion behavior
+     * @param string $customFilename    Optional custom file name to use for the created link
      *
      * @return Attachment   The created Attachment object
      */
-    public function storeAndAttachFile(File $file, AttachableObjectInterface $object, $fieldName = null, $deleteAfterCopy = null)
+    public function storeAndAttachFile(File $file, AttachableObjectInterface $object, $fieldName = null, $deleteAfterCopy = null, $customFilename = null)
     {
         $this->checkAttachableObject($object);
         
@@ -154,7 +155,8 @@ class AttachmentHandler implements AttachmentHandlerInterface
         
         $fileKey = $this->generateKey($file, $object, $fieldName);
         $this->copyToStorage($file, $fileKey);
-        $attachment = $this->saveToDatabase($file, $object, $fieldName, $fileKey);
+        
+        $attachment = $this->saveToDatabase($file, $object, $fieldName, $fileKey, $customFilename);
         
         if ($deleteAfterCopy)
         {
@@ -418,10 +420,10 @@ class AttachmentHandler implements AttachmentHandlerInterface
      *
      * @return Attachment
      */
-    protected function saveToDatabase(File $file, AttachableObjectInterface $object, $fieldName, FileKey $fileKey)
+    protected function saveToDatabase(File $file, AttachableObjectInterface $object, $fieldName, FileKey $fileKey, $customFilename = null)
     {
         $attachment = $this->getOrCreateAttachment($file, $object, $fieldName, $fileKey);
-        $link = $this->createAttachmentLink($file, $object, $fieldName, $attachment);
+        $link = $this->createAttachmentLink($file, $object, $fieldName, $attachment, $customFilename);
         
         if (in_array($fieldName, $object->getAttachableFieldNames()))
         {
@@ -489,7 +491,7 @@ class AttachmentHandler implements AttachmentHandlerInterface
      *
      * @return AttachmentLink
      */
-    protected function createAttachmentLink(File $file, AttachableObjectInterface $object, $fieldName, Attachment $attachment)
+    protected function createAttachmentLink(File $file, AttachableObjectInterface $object, $fieldName, Attachment $attachment, $customFilename = null)
     {
         if ($file instanceof UploadedFile)
         {
@@ -502,6 +504,12 @@ class AttachmentHandler implements AttachmentHandlerInterface
             $extension = $file->getExtension();
             $filename = $file->getFilename();
             $basename = $file->getBasename('.'.$extension);
+        }
+        
+        if (null !== $customFilename)
+        {
+            $filename = $customFilename;
+            $basename = basename($filename, '.'.$extension);
         }
         
         $link = new AttachmentLink();

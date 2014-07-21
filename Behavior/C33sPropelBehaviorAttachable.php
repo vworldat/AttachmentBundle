@@ -62,6 +62,11 @@ protected \$a{$phpName}Attachment;
  */
 protected \$aNew{$phpName}File;
 
+/**
+ * @var string
+ */
+protected \$aNew{$phpName}CustomFilename;
+
 EOF;
             
         }
@@ -191,9 +196,47 @@ public function has{$phpName}()
  */
 public function set{$phpName}File(File \$file = null)
 {
+    if (null === \$file && null !== \$this->aNew{$phpName}File)
+    {
+        // For some reason, avocode's SingleUploadSubscriber sometimes resets an already set file path.
+        // Until I find out why, this is the "fix".
+        return \$this;
+    }
+    
     \$this->aNew{$phpName}File = \$file;
-
+    
     return \$this;
+}
+
+/**
+ * Get the original file name used to upload this specific attachment.
+ *
+ * @return string
+ */
+public function get{$phpName}OriginalFilename()
+{
+    if (null === \$this->get{$phpName}Attachment())
+    {
+        return '';
+    }
+    
+    \$link = \$this->get{$phpName}Attachment()->getLinkForObject(\$this, '{$phpName}');
+    if (null === \$link)
+    {
+        return '';
+    }
+    
+    return \$link->getFileName();
+}
+
+/**
+ * Set the file name to use instead of the real one for the new {$phpName} attachment.
+ *
+ * @param string \$filename
+ */
+public function set{$phpName}OriginalFilename(\$filename)
+{
+    \$this->aNew{$phpName}CustomFilename = \$filename;
 }
 
 /**
@@ -268,8 +311,9 @@ protected function processNew{$phpName}File()
         return 0;
     }
     
-    \$this->attachFile(\$this->aNew{$phpName}File, '{$phpName}', \$this->deleteNewAttachmentFiles);
+    \$this->attachFile(\$this->aNew{$phpName}File, '{$phpName}', \$this->deleteNewAttachmentFiles, \$this->aNew{$phpName}CustomFilename);
     \$this->aNew{$phpName}File = null;
+    \$this->aNew{$phpName}CustomFilename = null;
     
     return 1;
 }
@@ -573,12 +617,13 @@ protected function processNewUnsavedFiles(PropelPDO \$con = null)
  * @param File \$file
  * @param string \$fieldName
  * @param boolean \$deleteAfterCopy
+ * @param string \$customFilename    Optional custom file name to use for the created link
  *
  * @return Attachment   The created Attachment object
  */
-public function attachFile(File \$file, \$fieldName = null, \$deleteAfterCopy = null)
+public function attachFile(File \$file, \$fieldName = null, \$deleteAfterCopy = null, \$customFilename = null)
 {
-    return \$this->getAttachmentHandler()->storeAndAttachFile(\$file, \$this, \$fieldName, \$deleteAfterCopy);
+    return \$this->getAttachmentHandler()->storeAndAttachFile(\$file, \$this, \$fieldName, \$deleteAfterCopy, \$customFilename);
 }
 
 /**

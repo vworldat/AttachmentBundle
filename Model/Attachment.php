@@ -200,4 +200,22 @@ class Attachment extends BaseAttachment implements UploadCollectionFileInterface
     {
         return true;
     }
+    
+    /**
+     * Get the AttachmentLink for a specific attachable object and field name.
+     *  
+     * @param AttachableObjectInterface $object
+     * @param string $fieldName
+     * 
+     * @return AttachmentLink
+     */
+    public function getLinkForObject(AttachableObjectInterface $object, $fieldName = null)
+    {
+        return AttachmentLinkQuery::create()
+            ->filterByAttachment($this)
+            ->filterByAttachableObject($object)
+            ->filterByModelField($fieldName)
+            ->findOne()
+        ;
+    }
 }
