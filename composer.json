@@ -19,7 +19,7 @@
             "C33s\\AttachmentBundle": ""
         },
         "classmap": [
-            "Behavior/"
+            "/Behavior"
         ]
     },
     "target-dir": "C33s/AttachmentBundle",
