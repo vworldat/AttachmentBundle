@@ -22,6 +22,7 @@
             "Behavior/"
         ]
     },
+    "target-dir": "C33s/AttachmentBundle",
     "minimum-stability": "stable",
     "require": {
         "php": ">=5.3.3",
