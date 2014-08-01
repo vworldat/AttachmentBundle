@@ -1,26 +1,26 @@
 <?php
 
-namespace c33s\AttachmentBundle\Attachment;
+namespace C33s\AttachmentBundle\Attachment;
 
-use c33s\AttachmentBundle\Exception\CouldNotWriteToStorageException;
-use c33s\AttachmentBundle\Exception\FilesystemDoesNotExistException;
-use c33s\AttachmentBundle\Exception\InputFileNotReadableException;
-use c33s\AttachmentBundle\Exception\InputFileNotWritableException;
-use c33s\AttachmentBundle\Exception\InvalidAttachableFieldNameException;
-use c33s\AttachmentBundle\Exception\InvalidHashCallableException;
-use c33s\AttachmentBundle\Exception\StorageDoesNotExistException;
-use c33s\AttachmentBundle\Model\Attachment;
-use c33s\AttachmentBundle\Model\AttachmentLink;
-use c33s\AttachmentBundle\Model\AttachmentLinkQuery;
-use c33s\AttachmentBundle\Model\AttachmentQuery;
-use c33s\AttachmentBundle\Schema\AttachmentSchema;
-use c33s\AttachmentBundle\Storage\Storage;
+use C33s\AttachmentBundle\Exception\CouldNotWriteToStorageException;
+use C33s\AttachmentBundle\Exception\FilesystemDoesNotExistException;
+use C33s\AttachmentBundle\Exception\InputFileNotReadableException;
+use C33s\AttachmentBundle\Exception\InputFileNotWritableException;
+use C33s\AttachmentBundle\Exception\InvalidAttachableFieldNameException;
+use C33s\AttachmentBundle\Exception\InvalidHashCallableException;
+use C33s\AttachmentBundle\Exception\StorageDoesNotExistException;
+use C33s\AttachmentBundle\Model\Attachment;
+use C33s\AttachmentBundle\Model\AttachmentLink;
+use C33s\AttachmentBundle\Model\AttachmentLinkQuery;
+use C33s\AttachmentBundle\Model\AttachmentQuery;
+use C33s\AttachmentBundle\Schema\AttachmentSchema;
+use C33s\AttachmentBundle\Storage\Storage;
 use Knp\Bundle\GaufretteBundle\FilesystemMap;
 use Symfony\Component\Finder\Finder;
 use Symfony\Component\HttpFoundation\File\File;
 use Symfony\Component\HttpFoundation\File\UploadedFile;
-use c33s\AttachmentBundle\Exception\MissingStorageConfigException;
-use c33s\AttachmentBundle\Exception\AttachmentException;
+use C33s\AttachmentBundle\Exception\MissingStorageConfigException;
+use C33s\AttachmentBundle\Exception\AttachmentException;
 
 /**
  * AttachmentHandler is the service gapping the bridge between actual files (residing in Gaufrette storages)
@@ -61,7 +61,7 @@ class AttachmentHandler implements AttachmentHandlerInterface
      *
      * @var string
      */
-    protected $fileKeyClass = 'c33s\\AttachmentBundle\\Attachment\\FileKey';
+    protected $fileKeyClass = 'C33s\\AttachmentBundle\\Attachment\\FileKey';
     
     /**
      * Remembered key => FileKey associations

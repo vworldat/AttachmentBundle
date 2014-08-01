@@ -1,9 +1,9 @@
 <?php
 
-namespace c33s\AttachmentBundle\Model;
+namespace C33s\AttachmentBundle\Model;
 
-use c33s\AttachmentBundle\Model\om\BaseAttachmentQuery;
-use c33s\AttachmentBundle\Attachment\AttachableObjectInterface;
+use C33s\AttachmentBundle\Model\om\BaseAttachmentQuery;
+use C33s\AttachmentBundle\Attachment\AttachableObjectInterface;
 
 use \Criteria;
 

@@ -1,6 +1,6 @@
 <?php
 
-namespace c33s\AttachmentBundle\Attachment;
+namespace C33s\AttachmentBundle\Attachment;
 
 /**
  * Objects which want to allow attachments must implement this interface

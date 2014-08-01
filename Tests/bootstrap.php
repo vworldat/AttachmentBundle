@@ -6,9 +6,6 @@ if (!is_file($autoloadFile = __DIR__.'/../vendor/autoload.php')) {
 
 require $autoloadFile;
 
-//set_include_path(__DIR__ . '/../vendor/phing/phing/classes' . PATH_SEPARATOR . __DIR__.'/../Behavior' . PATH_SEPARATOR . get_include_path());
-
-
 //$class = new \ReflectionClass('EventDispatcherBehavior');
 $builder = new \PropelQuickBuilder();
 //$builder->getConfig()->setBuildProperty('behavior.event_dispatcher.class', $class->getFileName());

@@ -114,11 +114,11 @@ EOF;
     
     public function objectMethods(OMBuilder $builder)
     {
-        $builder->declareClass('c33s\\AttachmentBundle\\Attachment\\AttachableObjectInterface');
-        $builder->declareClass('c33s\\AttachmentBundle\\Attachment\\AttachmentHandlerInterface');
-        $builder->declareClass('c33s\\AttachmentBundle\\Model\\Attachment');
-        $builder->declareClass('c33s\\AttachmentBundle\\Model\\AttachmentQuery');
-        $builder->declareClass('c33s\\AttachmentBundle\\Collection\\UploadCollection');
+        $builder->declareClass('C33s\\AttachmentBundle\\Attachment\\AttachableObjectInterface');
+        $builder->declareClass('C33s\\AttachmentBundle\\Attachment\\AttachmentHandlerInterface');
+        $builder->declareClass('C33s\\AttachmentBundle\\Model\\Attachment');
+        $builder->declareClass('C33s\\AttachmentBundle\\Model\\AttachmentQuery');
+        $builder->declareClass('C33s\\AttachmentBundle\\Collection\\UploadCollection');
         $builder->declareClass('Symfony\\Component\\HttpFoundation\\File\\File');
         $builder->declareClass('Symfony\\Component\\HttpFoundation\\File\\UploadedFile');
         $builder->declareClass('\\PropelCollection');
@@ -350,7 +350,7 @@ public function getAllAttachments()
 
 /**
  * Get attachments related to this object but not referenced by a specific field.
- * This method returns an instance of c33s\AttachmentBundle\Collection\UploadCollection
+ * This method returns an instance of C33s\AttachmentBundle\Collection\UploadCollection
  * to be used by the collection_upload form type.
  *
  * @return UploadCollection[Attachment]
@@ -360,7 +360,7 @@ public function getAllAttachmentsCollection()
     if (null === \$this->aAllAttachmentsCollection)
     {
         \$this->aAllAttachmentsCollection = new UploadCollection(\$this->getAllAttachments()->getArrayCopy());
-        \$this->aAllAttachmentsCollection->setModel('c33s\\AttachmentBundle\\Model\\Attachment');
+        \$this->aAllAttachmentsCollection->setModel('C33s\\AttachmentBundle\\Model\\Attachment');
     }
     
     return \$this->aAllAttachmentsCollection;
@@ -430,7 +430,7 @@ public function getGeneralAttachments()
 
 /**
  * Get attachments related to this object but not referenced by a specific field.
- * This method returns an instance of c33s\AttachmentBundle\Collection\UploadCollection
+ * This method returns an instance of C33s\AttachmentBundle\Collection\UploadCollection
  * to be used by the collection_upload form type.
  *
  * @return UploadCollection[Attachment]
@@ -440,7 +440,7 @@ public function getGeneralAttachmentsCollection()
     if (null === \$this->aGeneralAttachmentsCollection)
     {
         \$this->aGeneralAttachmentsCollection = new UploadCollection(\$this->getGeneralAttachments()->getArrayCopy());
-        \$this->aGeneralAttachmentsCollection->setModel('c33s\\AttachmentBundle\\Model\\Attachment');
+        \$this->aGeneralAttachmentsCollection->setModel('C33s\\AttachmentBundle\\Model\\Attachment');
     }
     
     return \$this->aGeneralAttachmentsCollection;

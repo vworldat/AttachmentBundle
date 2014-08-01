@@ -1,9 +1,9 @@
 <?php
 
-namespace c33s\AttachmentBundle\Attachment;
+namespace C33s\AttachmentBundle\Attachment;
 
 use Symfony\Component\HttpFoundation\File\File;
-use c33s\AttachmentBundle\Model\Attachment;
+use C33s\AttachmentBundle\Model\Attachment;
 
 interface AttachmentHandlerInterface
 {

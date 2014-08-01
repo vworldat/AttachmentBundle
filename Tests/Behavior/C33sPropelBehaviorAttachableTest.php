@@ -1,6 +1,6 @@
 <?php
 
-use c33s\AttachmentBundle\Model\Attachment;
+use C33s\AttachmentBundle\Model\Attachment;
 class C33sPropelBehaviorAttachableTest extends \PHPUnit_Framework_TestCase
 {
     public function setUp()
@@ -64,8 +64,8 @@ EOF;
     
     public function testInterfacesAdded()
     {
-        $this->assertInstanceOf('c33s\\AttachmentBundle\\Attachment\\AttachableObjectInterface', new TestModelWithoutColumns());
-        $this->assertInstanceOf('c33s\\AttachmentBundle\\Attachment\\AttachableObjectInterface', new TestModelWithColumns());
+        $this->assertInstanceOf('C33s\\AttachmentBundle\\Attachment\\AttachableObjectInterface', new TestModelWithoutColumns());
+        $this->assertInstanceOf('C33s\\AttachmentBundle\\Attachment\\AttachableObjectInterface', new TestModelWithColumns());
     }
     
     /**
@@ -135,7 +135,7 @@ EOF;
     
     public function testAttachmentHandlerIsForwarded()
     {
-        $handler = $this->getMock('c33s\\AttachmentBundle\\Attachment\\AttachmentHandlerInterface');
+        $handler = $this->getMock('C33s\\AttachmentBundle\\Attachment\\AttachmentHandlerInterface');
         Attachment::setAttachmentHandler($handler);
         
         $model = new TestModelWithColumns();

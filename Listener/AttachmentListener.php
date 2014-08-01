@@ -1,10 +1,10 @@
 <?php
 
-namespace c33s\AttachmentBundle\Listener;
+namespace C33s\AttachmentBundle\Listener;
 
 use Symfony\Component\EventDispatcher\GenericEvent;
 use Symfony\Component\DependencyInjection\ContainerAware;
-use c33s\AttachmentBundle\Model\Attachment;
+use C33s\AttachmentBundle\Model\Attachment;
 
 class AttachmentListener extends ContainerAware
 {

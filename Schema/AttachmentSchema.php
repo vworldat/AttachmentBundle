@@ -1,9 +1,9 @@
 <?php
 
-namespace c33s\AttachmentBundle\Schema;
+namespace C33s\AttachmentBundle\Schema;
 
-use c33s\AttachmentBundle\Exception\InvalidHashCallableException;
-use c33s\AttachmentBundle\Storage\Storage;
+use C33s\AttachmentBundle\Exception\InvalidHashCallableException;
+use C33s\AttachmentBundle\Storage\Storage;
 
 /**
  * This is used by the AttachmentHandler to hold attachment config values.

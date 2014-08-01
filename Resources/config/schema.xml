@@ -1,5 +1,5 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<database name="default" namespace="c33s\AttachmentBundle\Model" defaultIdMethod="native">
+<database name="default" namespace="C33s\AttachmentBundle\Model" defaultIdMethod="native">
     <behavior name="query_cache">
         <parameter name="lifetime" value="600" />
     </behavior>

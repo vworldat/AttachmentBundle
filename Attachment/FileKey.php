@@ -1,11 +1,11 @@
 <?php
 
-namespace c33s\AttachmentBundle\Attachment;
+namespace C33s\AttachmentBundle\Attachment;
 
 use Symfony\Component\DependencyInjection\Container;
-use c33s\AttachmentBundle\Exception\InvalidKeyException;
-use c33s\AttachmentBundle\Exception\MissingKeyParameterException;
-use c33s\AttachmentBundle\Exception\StorageDoesNotExistException;
+use C33s\AttachmentBundle\Exception\InvalidKeyException;
+use C33s\AttachmentBundle\Exception\MissingKeyParameterException;
+use C33s\AttachmentBundle\Exception\StorageDoesNotExistException;
 
 class FileKey
 {

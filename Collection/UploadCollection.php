@@ -1,6 +1,6 @@
 <?php
 
-namespace c33s\AttachmentBundle\Collection;
+namespace C33s\AttachmentBundle\Collection;
 
 /**
  * This is a special implementation of PropelCollection to allow compatibility with

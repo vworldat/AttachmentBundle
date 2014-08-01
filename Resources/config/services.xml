@@ -6,9 +6,9 @@
     <parameters>
         <parameter key="c33s_attachment.handler.attachment_config" />
         <parameter key="c33s_attachment.handler.storage_config" />
-        <parameter key="c33s_attachment.handler.class">c33s\AttachmentBundle\Attachment\AttachmentHandler</parameter>
-        <parameter key="c33s_attachment.event_listener.class">c33s\AttachmentBundle\Listener\AttachmentListener</parameter>
-        <parameter key="c33s_attachment.twig.extension.class">c33s\AttachmentBundle\Twig\Extension\AttachmentExtension</parameter>
+        <parameter key="c33s_attachment.handler.class">C33s\AttachmentBundle\Attachment\AttachmentHandler</parameter>
+        <parameter key="c33s_attachment.event_listener.class">C33s\AttachmentBundle\Listener\AttachmentListener</parameter>
+        <parameter key="c33s_attachment.twig.extension.class">C33s\AttachmentBundle\Twig\Extension\AttachmentExtension</parameter>
     </parameters>
 
     <services>
@@ -22,7 +22,7 @@
             <call method="setContainer">
                 <argument type="service" id="service_container" />
             </call>
-            <tag name="propel.event_listener" class="c33s\AttachmentBundle\Model\Attachment" event="propel.fetch_attachment_handler_service" />
+            <tag name="propel.event_listener" class="C33s\AttachmentBundle\Model\Attachment" event="propel.fetch_attachment_handler_service" />
         </service>
         
         <service id="c33s_attachment.twig.extension" class="%c33s_attachment.twig.extension.class%">

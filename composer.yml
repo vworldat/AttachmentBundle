@@ -11,23 +11,19 @@ authors:
     homepage:   'http://web-emerge.com/'
 
 autoload:
-    psr-0:
-        'c33s\AttachmentBundle': ''
+    psr-4:
+        'C33s\AttachmentBundle\': ''
     classmap:
-        - '/Behavior'
-
-target-dir: "c33s/AttachmentBundle"
+        - 'Behavior/'
 
 minimum-stability: stable
 
 require:
     php: '>=5.3.3'
     
-    symfony/symfony:                                    '>=2.3.0'
-    propel/propel-bundle:                               '>=1.2.0'
+    symfony/symfony:                                    '~2.3'
+    propel/propel-bundle:                               '~1.2'
     knplabs/knp-gaufrette-bundle:                       '0.1.*'
     willdurand/propel-eventdispatcher-bundle:           '1.0.*'
-    cedriclombardot/admingenerator-generator-bundle:    '>=1.0.0'
-    avocode/form-extensions-bundle:                     '>=0.1.0'
-
+    avocode/form-extensions-bundle:                     '~0.1'
     

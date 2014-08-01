@@ -9,7 +9,6 @@ in your `composer.json` file:
 {
     "require": {
         "c33s/attachment-bundle": "@stable",
-        "avocode/form-extensions-bundle": "dev-master" (optional)
     }
 }
 ```
@@ -25,11 +24,9 @@ Register the bundle and its dependencies in `app/AppKernel.php`:
         return array(
             // ...
 
-            new c33s\AttachmentBundle\c33sAttachmentBundle(),
+            new C33s\AttachmentBundle\C33sAttachmentBundle(),
             new Bazinga\Bundle\PropelEventDispatcherBundle\BazingaPropelEventDispatcherBundle(),
             new Knp\Bundle\GaufretteBundle\KnpGaufretteBundle(),
-            // also including avocode/form-extensions-bundle is recommended to geht the admin forms to work
-            new Avocode\FormExtensionsBundle\AvocodeFormExtensionsBundle(),
         );
     }
 

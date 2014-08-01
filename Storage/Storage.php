@@ -1,6 +1,6 @@
 <?php
 
-namespace c33s\AttachmentBundle\Storage;
+namespace C33s\AttachmentBundle\Storage;
 
 use Gaufrette\Filesystem;
 use Gaufrette\Adapter\Local;
