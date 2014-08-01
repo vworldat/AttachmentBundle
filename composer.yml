@@ -11,8 +11,8 @@ authors:
     homepage:   'http://web-emerge.com/'
 
 autoload:
-    psr-4:
-        'C33s\AttachmentBundle\': ''
+    psr-0:
+        'C33s\AttachmentBundle': ''
     classmap:
         - 'Behavior/'
 
