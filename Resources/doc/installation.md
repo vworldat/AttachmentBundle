@@ -42,7 +42,7 @@ propel:
     # ...
     
     behaviors:
-        c33s_attachable:    vendor.c33s.attachment-bundle.c33s.AttachmentBundle.Behavior.C33sPropelBehaviorAttachable
+        c33s_attachable:    vendor.c33s.attachment-bundle.C33s.AttachmentBundle.Behavior.C33sPropelBehaviorAttachable
         event_dispatcher:   vendor.willdurand.propel-eventdispatcher-behavior.src.EventDispatcherBehavior
 
 ```
