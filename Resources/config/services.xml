@@ -8,6 +8,7 @@
         <parameter key="c33s_attachment.handler.storage_config" />
         <parameter key="c33s_attachment.handler.class">C33s\AttachmentBundle\Attachment\AttachmentHandler</parameter>
         <parameter key="c33s_attachment.event_listener.class">C33s\AttachmentBundle\Listener\AttachmentListener</parameter>
+        <parameter key="c33s_attachment.form_type_guesser.class">C33s\AttachmentBundle\Form\AttachmentTypeGuesser</parameter>
         <parameter key="c33s_attachment.twig.extension.class">C33s\AttachmentBundle\Twig\Extension\AttachmentExtension</parameter>
     </parameters>
 
@@ -25,6 +26,10 @@
             <tag name="propel.event_listener" class="C33s\AttachmentBundle\Model\Attachment" event="propel.fetch_attachment_handler_service" />
         </service>
         
+        <service id="c33s_attachment.form_type_guesser" class="%c33s_attachment.form_type_guesser.class%">
+            <tag name="form.type_guesser" />
+        </service>
+                
         <service id="c33s_attachment.twig.extension" class="%c33s_attachment.twig.extension.class%">
             <argument type="service" id="c33s_attachment.handler" />
             <argument type="service" id="liip_imagine.cache.manager" />
