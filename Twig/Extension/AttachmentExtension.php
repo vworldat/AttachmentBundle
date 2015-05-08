@@ -17,7 +17,7 @@ class AttachmentExtension extends \Twig_Extension
      * @var CacheManager
      */
     protected $cacheManager;
-    
+
     /**
      * Create a new AttachmentExtension instance.
      *
@@ -28,7 +28,7 @@ class AttachmentExtension extends \Twig_Extension
         $this->attachmentHandler = $attachmentHandler;
         $this->cacheManager = $cacheManager;
     }
-    
+
     public function getFilters()
     {
         return array(
@@ -36,23 +36,22 @@ class AttachmentExtension extends \Twig_Extension
             new \Twig_SimpleFilter('att_image', array($this, 'attachmentImageFilter'), array('is_safe' => array('html'))),
         );
     }
-    
+
     /**
      * Fetch attachment url and pass through liip_imagine filter if the url is not null and filter name is given.
      *
      * @param string $key
      * @param string $filter    Optional liip_imagine filter name
-     * @param boolean $absolute Return absolute url
      *
      * @return string
      */
-    public function attachmentUrlFilter($key, $filter = null, $absolute = false)
+    public function attachmentUrlFilter($key, $filter = null)
     {
         if (empty($key))
         {
             return '';
         }
-        
+
         try
         {
             $url = $this->attachmentHandler->getFileUrl($key);
@@ -61,15 +60,15 @@ class AttachmentExtension extends \Twig_Extension
         {
             return '';
         }
-        
+
         if (null === $filter)
         {
             return $url;
         }
-        
-        return $this->cacheManager->getBrowserPath($url, $filter, $absolute);
+
+        return $this->cacheManager->getBrowserPath($url, $filter);
     }
-    
+
     /**
      * Filters attachment url, passes it through liip_imagine and provides a ready to use img tag that is marked as safe.
      * If the url is empty, no image tag will be generated.
@@ -83,15 +82,15 @@ class AttachmentExtension extends \Twig_Extension
     public function attachmentImageFilter($key, $filter, $title = '', $altImageUrl = null)
     {
         $url = $this->attachmentUrlFilter($key, $filter);
-        
+
         if ('' == $url && null === $altImageUrl)
         {
             return '';
         }
-        
+
         return '<img src="'.('' != $url ? $url : $altImageUrl).'" title="'.htmlspecialchars($title).'" />';
     }
-    
+
     public function getName()
     {
         return 'c33s_attachment';
