@@ -27,5 +27,4 @@ require:
     propel/propel-bundle:                               '~1.2'
     knplabs/knp-gaufrette-bundle:                       '0.1.*'
     willdurand/propel-eventdispatcher-bundle:           '1.0.*'
-    avocode/form-extensions-bundle:                     '~0.1'
     
