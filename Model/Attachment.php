@@ -2,14 +2,13 @@
 
 namespace C33s\AttachmentBundle\Model;
 
-use Avocode\FormExtensionsBundle\Form\Model\UploadCollectionFileInterface;
 use C33s\AttachmentBundle\Attachment\AttachmentHandlerInterface;
 use C33s\AttachmentBundle\Model\om\BaseAttachment;
 use Symfony\Component\EventDispatcher\GenericEvent;
 use Symfony\Component\HttpFoundation\File\File;
 use C33s\AttachmentBundle\Attachment\AttachableObjectInterface;
 
-class Attachment extends BaseAttachment implements UploadCollectionFileInterface
+class Attachment extends BaseAttachment
 {
     protected static $attachmentHandler;
     
