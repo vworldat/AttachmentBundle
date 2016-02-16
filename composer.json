@@ -28,7 +28,7 @@
         "php": ">=5.3.3",
         "symfony/symfony": "~2.3",
         "propel/propel-bundle": "~1.2",
-        "knplabs/knp-gaufrette-bundle": "0.1.*",
-        "willdurand/propel-eventdispatcher-bundle": "1.0.*"
+        "knplabs/knp-gaufrette-bundle": "~0.1",
+        "willdurand/propel-eventdispatcher-bundle": "~1.0.0"
     }
 }
